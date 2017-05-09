@@ -9,9 +9,10 @@ client.on('ready', () => {
 });
 
 let myId = '311163859580747778';
-let ingores = [
+let ignores = [
     myId
 ];
+let wrecked = false;
 
 function pick(arr) {
     return arr[Math.floor(arr.length * Math.random())];
@@ -58,8 +59,11 @@ function reply(message) {
 }
 
 client.on('message', message => {
+	if (wrecked) {
+		return;
+	}
     try {
-        if (message.author.id in ignores) {
+        if (ignores.indexOf(message.author.id) !== -1) {
             return;
         }
 
@@ -74,6 +78,7 @@ client.on('message', message => {
         }
 
     } catch(e) {
+		wrecked = true;
         message.reply(e.name + ': ' + e.message);
     }
 });
