@@ -6,6 +6,7 @@ const vm = require('vm');
 
 client.on('ready', () => {
     console.log('I am ready!');
+	client.user.setGame('Discord');
 });
 
 let myId = '311163859580747778';
@@ -37,6 +38,7 @@ function checkReply(message) {
     let lc = c.toLowerCase().trim();
 	let m = null;
     
+	// exact match
     if (lc === 'нет') {
         return 'крипера ответ.';
     }
@@ -44,11 +46,26 @@ function checkReply(message) {
         return 'крипера отвеа.';
     }
 	
+	// bad words
+	if ((' ' + lc.match('([^а-яА-ЯёЁ]((н[аеи]|п?о)?ху[йеяюиё]|муд[аеияо]|сук[аиеу]|бля|п[ие]до|([усв]|от|р[ао]з|(пр|[дзвпн])[аыоие])?ъ?[её]б|о?п[иеёюй]зд|(вы|у)?си?ра)|(fu|di|su)ck)')) {
+		return 'please, be polite!';
+	}
+	
+	// bad words 2
+	if ((' ' + lc.match('[^а-яА-ЯёЁ](д(ау|ове)н)')) {
+		return 'пожалуйста, не обзывайся.';
+	}
+	
+	// ники Драгона
 	m = c.match(/(Dragon2488|Archengius)/);
     if (m) {
         return '`' + m[0] + '` is deprecated. Use `AntiquiAvium` instead.';
     }
+    if (lc.match(/драгон/)) {
+        return 'Он вам не Драгон.';
+    }
 	
+	// как так?
     if (lc.match(/как так[?!]*$/)) {
         return pick([
             'ну вот как-то так.',
@@ -59,7 +76,9 @@ function checkReply(message) {
         ]);
     }
 	
-	if (lc.match(/(привет|здравствуй|доброе утро|добрый день|добрый вечер)/)) {
+	// приветствие
+	if (lc.match(/(привет|здравствуй|доброе утро|добрый день|добрый вечер)/)
+	&& message.mentions.users.has(myId) || !message.mentions.users.size) {
 		return pick([
 			'привет!',
 			'здравствуй!',
@@ -69,20 +88,20 @@ function checkReply(message) {
 		]);
 	}
 	
+	// разное
 	if (lc.match(/да ладно/)) {
 		return 'холодно-прохладно.';
 	}
-	
 	if (lc.match(/нормально/)) {
 		return 'нормально или хорошо?';
 	}
-	
-	if (lc.match(/хорошо/) && chance(0.3)) {
+	if (lc.match(/хорошо/) && chance(0.4)) {
 		return 'хорошо или замечательно?';
 	}
 	
-	m = lc.match(/[ ()0-9.*\/+-]*[0-9][ ()0-9.*\/+-]*[*\/+-][ ()0-9.*\/+-]*[0-9][()0-9.*\/+-]*/);
-	if (m) {
+	// решение примеров
+	m = (' ' + lc).match(/ [ ()0-9.*\/+-]*[0-9][ ()0-9.*\/+-]*[*\/+-][ ()0-9.*\/+-]*[0-9][()0-9.*\/+-]*/);
+	if (m && m.length == 1) {
 		try {
 			let result = eval(m[0]);
 			if (typeof result === 'number') {
@@ -98,36 +117,39 @@ client.on('message', message => {
 		return;
 	}
     try {
+		
+		// бот должен игнорить себя
         if (ignores.indexOf(message.author.id) !== -1) {
             return;
         }
-
-        if (message.mentions.users.has(myId)) {
-			if (!message.guild || message.channel.id === '236835572692287488') {
-				capReply(message, pick([
-					'а?',
-					'что?',
-					'зачем звал?',
-					'ку-ку.',
-					'да ладно, можешь не призывать. Всё равно я ещё мало чего умею.'
-				]));
-			} else {
-				message.react('👋');
-				message.react(':wink:');
-				message.react('laughing');
-			}
-        }
-
+		
+		// выбор ответа
         let reply = checkReply(message);
 
         if (reply) {
+			// крипера ответ
             capReply(message, reply);
-        }
+        } else {
+			// если просто призвали
+			if (message.mentions.users.has(myId)) {
+				if (!message.guild || message.channel.id === '236835572692287488') {
+					capReply(message, pick([
+						'а?',
+						'что?',
+						'зачем звал?',
+						'ку-ку.',
+						'да ладно, можешь не призывать. Всё равно я ещё мало чего умею.'
+					]));
+				} else {
+					message.react(pick['👋😑😁🖐🍌📯🙃😓'.split('')]);
+				}
+			}
+		}
 
     } catch(e) {
 		console.error(e);
-		wrecked = true;
-        message.reply(e.name + ': ' + e.message);
+		//wrecked = true;
+        //message.reply(e.name + ': ' + e.message);
     }
 });
 
