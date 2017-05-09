@@ -78,7 +78,7 @@ function checkReply(message) {
 	
 	// приветствие
 	if (lc.match(/(привет|здравствуй|доброе утро|добрый день|добрый вечер)/)
-	&& message.mentions.users.has(myId) || !message.mentions.users.size) {
+	&& (message.mentions.users.has(myId) || !message.mentions.users.size)) {
 		return pick([
 			'привет!',
 			'здравствуй!',
