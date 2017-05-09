@@ -14,8 +14,22 @@ let ignores = [
 ];
 let wrecked = false;
 
+function chance(a) {
+	return Math.random < a;
+}
+
 function pick(arr) {
     return arr[Math.floor(arr.length * Math.random())];
+}
+
+function capReply(message, text) {
+	if (!text) {
+		return;
+	}
+	if (!message.guild.available) {
+		text = text.slice(0, 1).toUpperCase() + text.slice(1);
+	}
+	message.reply(text);
 }
 
 function checkReply(message) {
@@ -45,11 +59,32 @@ function checkReply(message) {
         ]);
     }
 	
-	m = lc.match(/[ ()0-9.*\/+-]*[0-9][ ()0-9.*\/+-]*[*\/+-][ ()0-9.*\/+-]*[0-9][()0-9.*\/+-]*/);
+	if (lc.match(/(привет|здравствуй|доброе утро|добрый день|добрый вечер)/)) {
+		return pick([
+			'привет!',
+			'здравствуй!',
+			'и тебе не хворать!',
+			'привет-привет.',
+			'привет.'
+		]);
+	}
 	
+	if (lc.match(/да ладно/)) {
+		return 'холодно-прохладно.';
+	}
+	
+	if (lc.match(/нормально/)) {
+		return 'нормально или хорошо?';
+	}
+	
+	if (lc.match(/хорошо/) && chance(0.3)) {
+		return 'хорошо или замечательно?';
+	}
+	
+	m = lc.match(/[ ()0-9.*\/+-]*[0-9][ ()0-9.*\/+-]*[*\/+-][ ()0-9.*\/+-]*[0-9][()0-9.*\/+-]*/);
 	if (m) {
 		try {
-			result = eval(m[0]);
+			let result = eval(m[0]);
 			if (typeof result === 'number') {
 				return String(result);
 			}
@@ -59,7 +94,7 @@ function checkReply(message) {
 }
 
 client.on('message', message => {
-	if (wrecked) {
+	if (wrecked || message.system) {
 		return;
 	}
     try {
@@ -68,16 +103,27 @@ client.on('message', message => {
         }
 
         if (message.mentions.users.has(myId)) {
-            message.react('wave');
+			if (!message.guild.available || message.channel.id === '236835572692287488') {
+				capReply(message, pick([
+					'а?',
+					'что?',
+					'зачем звал?',
+					'ку-ку.',
+					'да ладно, можешь не призывать. Всё равно я ещё мало чего умею.'
+				]));
+			} else {
+				message.react('wave');
+			}
         }
 
         let reply = checkReply(message);
 
         if (reply) {
-            message.reply(reply);
+            capReply(message, reply);
         }
 
     } catch(e) {
+		console.error(e);
 		wrecked = true;
         message.reply(e.name + ': ' + e.message);
     }
