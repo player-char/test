@@ -112,7 +112,9 @@ client.on('message', message => {
 					'да ладно, можешь не призывать. Всё равно я ещё мало чего умею.'
 				]));
 			} else {
-				message.react('wave');
+				message.react('👋');
+				message.react(':wink:');
+				message.react('laughing');
 			}
         }
 
