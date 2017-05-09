@@ -1,6 +1,9 @@
 const Discord = require('discord.js');
 const client = new Discord.Client();
 
+const vm = require('vm');
+
+
 client.on('ready', () => {
     console.log('I am ready!');
 });
@@ -17,6 +20,7 @@ function pick(arr) {
 function reply(message) {
     let c = message.content;
     let lc = c.toLowerCase().trim();
+	let m = null;
     
     if (lc === 'нет') {
         return 'крипера ответ.';
@@ -24,9 +28,12 @@ function reply(message) {
     if (lc === 'неа') {
         return 'крипера отвеа.';
     }
-    if (let m = c.match(/(Dragon2488|Archengius)/)) {
+	
+	m = c.match(/(Dragon2488|Archengius)/);
+    if (m) {
         return '`' + m[0] + '` is deprecated. Use `AntiquiAvium` instead.';
     }
+	
     if (lc.match(/как так[?!]*$/)) {
         return pick([
             'ну вот как-то так.',
@@ -36,6 +43,18 @@ function reply(message) {
             'так-то так, да как-то так как никак.'
         ]);
     }
+	
+	m = lc.match(/[ ()0-9.*\/+-]*[0-9][ ()0-9.*\/+-]*[*\/+-][ ()0-9.*\/+-]*[0-9][()0-9.*\/+-]*/);
+	
+	if (m) {
+		try {
+			result = eval(m[0]);
+			if (typeof result === 'number') {
+				return String(result);
+			}
+		} catch(e) {}
+	}
+	
 }
 
 client.on('message', message => {
