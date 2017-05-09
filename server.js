@@ -26,7 +26,7 @@ function capReply(message, text) {
 	if (!text) {
 		return;
 	}
-	if (!message.guild.available) {
+	if (!message.guild) {
 		text = text.slice(0, 1).toUpperCase() + text.slice(1);
 	}
 	message.reply(text);
@@ -103,7 +103,7 @@ client.on('message', message => {
         }
 
         if (message.mentions.users.has(myId)) {
-			if (!message.guild.available || message.channel.id === '236835572692287488') {
+			if (!message.guild || message.channel.id === '236835572692287488') {
 				capReply(message, pick([
 					'а?',
 					'что?',
