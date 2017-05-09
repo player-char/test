@@ -18,7 +18,7 @@ function pick(arr) {
     return arr[Math.floor(arr.length * Math.random())];
 }
 
-function reply(message) {
+function checkReply(message) {
     let c = message.content;
     let lc = c.toLowerCase().trim();
 	let m = null;
