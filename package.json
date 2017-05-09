@@ -1,0 +1,13 @@
+{
+  "name": "creeperdiscordbot",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "discord.js": "hydrabolt/discord.js"
+  },
+  "engines": {
+    "node": ">=6.0.0"
+  }
+}
