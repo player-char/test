@@ -14,7 +14,7 @@ let ignores = [
 let wrecked = false;
 
 function chance(a) {
-	return Math.random < a;
+	return Math.random() < a;
 }
 
 function pick(arr) {
@@ -160,7 +160,7 @@ function checkReply(message) {
 	
 	// если просто призвали
 	if (mentioned) {
-		if (chance(0.7) && (!message.guild || message.channel.id === '236835572692287488')) {
+		if (chance(0.4) && (!message.guild || message.channel.id === '236835572692287488')) {
 			return [
 				'а?',
 				'что?',
