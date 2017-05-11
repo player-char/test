@@ -57,10 +57,17 @@ function capReply(message, text, flags) {
 
 function checkReply(message, flags) {
 	let mentioned = message.mentions.users.has(myId);
-    let c = message.content;
-    let lc = c.toLowerCase().trim();
+    let c = message.content.trim();
+    let lc = c.toLowerCase();
 	let m = null;
     
+	// text mentioning
+	m = lc.match(/^(крип(ушка|ак|ер(аст)?)|creep(er|ah)), /);
+	if (m) {
+		lc = lc.slice(m[0].length);
+		c = c.slice(m[0].length);
+	}
+	
 	// exact match
     if (lc === 'нет') {
         return 'крипера ответ.';
@@ -74,7 +81,7 @@ function checkReply(message, flags) {
     }
 	
 	// Iron Door
-	m = lc.match(/(>\|<|[zcsjh]h?|[жшхwx]+|[\|il]{3})[aeouiyаеёуыоияэю340]+й?([лl]|[\/j][li\|])+[aeouiyаеёуыоияэю340]+й?[zscзс3]+[нnh]+[aeouiyаеёуыоияэю340]+[a-zа-яё0-9]*?[\s,.\?!\\\/\*=+-]*[dtдт]+([wvbвуф]|[\|il]{3})+[aeouiyаеёуыоияэю340]+[rpр]+[a-zа-яё0-9]*/g);
+	m = c.match(/(>\|<|[zcsjh]h?|[жшхwx]+|[\|il]{3})[aeouiyаеёуыоияэю340]+й?([лl]|[\/j][li\|])+[aeouiyаеёуыоияэю340]+й?[zscзс3]+[нnh]+[aeouiyаеёуыоияэю340]+[a-zа-яё0-9]*?[\s,.\?!\\\/\*=+-]*[dtдт]+([wvbвуф]|[\|il]{3})+[aeouiyаеёуыоияэю340]+[rpр]+[a-zа-яё0-9]*/g);
 	if (m) {
 		for (let i = 0; i < m.length; i++) {
 			if (!m[i].match(/^(Железн(ая|ую) Дверь|Железной Двер(и|ью))$/)) {
