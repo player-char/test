@@ -62,7 +62,7 @@ function checkReply(message, flags) {
 	let m = null;
     
 	// text mentioning
-	m = lc.match(/^(крип(ушка|ак|ер(аст)?)|creep(er|ah)), /);
+	m = lc.match(/^(крип(ушка|ак|ер(аст)?)|creep(er|ah))([,.] ?|$)/);
 	if (m) {
 		mentioned = true;
 		lc = lc.slice(m[0].length);
@@ -82,7 +82,7 @@ function checkReply(message, flags) {
     }
 	
 	// Iron Door
-	m = c.match(/(>\|<|[zcsjh]h?|[жшхwx]+|[\|il]{3})[aeouiyаеёуыоияэю340]+й?([лl]|[\/j][li\|])+[aeouiyаеёуыоияэю340]+й?[zscзс3]+[нnh]+[aeouiyаеёуыоияэю340]+[a-zа-яё0-9]*?[\s,.\?!\\\/\*=+-]*[dtдт]+([wvbвуф]|[\|il]{3})+[aeouiyаеёуыоияэю340]+[rpр]+[a-zа-яё0-9]*/gi);
+	m = c.match(/(>\|<|[zcsjh]h?|[жшхwx]+|[\|il]{3})[aeouiyаеёуыоияэю340]+й?([лl]|[\/j][li\|\\]\\?)+[aeouiyаеёуыоияэю340]+й?[zscзс3]+[нnh]+[aeouiyаеёуыоияэю340]+[a-zа-яё0-9]*?[\s,.\?!\\\/\*=+-]*[dtдт]+([wvbвуф]|[\|il]{3})+[aeouiyаеёуыоияэю340]+[rpр]+[a-zа-яё0-9]*/gi);
 	if (m) {
 		for (let i = 0; i < m.length; i++) {
 			if (!m[i].match(/^(Железн(ая|ую) Дверь|Железной Двер(и|ью))$/)) {
@@ -248,7 +248,17 @@ function checkReply(message, flags) {
 		return 'замечательно' + pick(['.', '!', ' :)', ' c:', ' (:']);
 	}
 	
-	// кто такой
+	// как дела?
+	if (lc.match(/(^|[^а-яА-ЯёЁ])как (твои |у тебя )дела/)) {
+		return 'как сажа бела ' + pick([':)', '(:']);
+	}
+	
+	// do you like
+	if (lc.match(/(^ *(ты )?любишь)(любишь[?! ]*$)/)) {
+		return 'кориандр люблю.';
+	}
+	
+	// кто такой кто-то
     if (lc.match(/(^|[^а-яА-ЯёЁ])(знаешь|кто так(ой|ая))/)) {
 		if (lc.match(/(^|[^а-яА-ЯёЁ])руль?т/)) {
 			if (customReact(message, 'rult')) {
@@ -278,6 +288,9 @@ function checkReply(message, flags) {
 		}
 		if (lc.match(/(^|[^а-яА-ЯёЁ])хайв[оа]н/)) {
 			return 'Красный Олень.';
+		}
+		if (lc.match(/(^|[^а-яА-ЯёЁ])сметан/)) {
+			return 'сметана вкусная.';
 		}
 		if (lc.match(/(^|[^а-яА-ЯёЁ])пл[еао]ер/)) {
 			return 'Томми Версетти дворами пошёл. В глухом переулке базуку нашёл.';
