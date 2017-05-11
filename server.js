@@ -43,7 +43,7 @@ function capReply(message, text, flags) {
 		text = pick(text);
 	}
 	
-	flags.r &&= !!message.guild; // if PM, write without mention
+	flags.r = flags.r && !!message.guild; // if PM, write without mention
 	
 	if (flags.r) {
 		// @User, there the text goes.
