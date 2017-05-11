@@ -21,20 +21,41 @@ function pick(arr) {
     return arr[Math.floor(arr.length * Math.random())];
 }
 
-function capReply(message, text) {
+function customReact(message, name) {
+	if (!message.guild) {
+		return false;
+	}
+	let arr = message.guild.emojis.array();
+	for (let i = 0; i < arr.length; i++) {
+		if (arr[i].name == name) {
+			message.react(arr[i]);
+			return true;
+		}
+	}
+	return false;
+}
+
+function capReply(message, text, flags) {
 	if (!text) {
 		return;
 	}
 	if (Array.isArray(text)) {
 		text = pick(text);
 	}
-	if (!message.guild) {
+	
+	flags.r &&= !!message.guild; // if PM, write without mention
+	
+	if (flags.r) {
+		// @User, there the text goes.
+		message.reply(text);
+	} else {
+		// There the text goes.
 		text = text.slice(0, 1).toUpperCase() + text.slice(1);
+		message.channel.send(text);
 	}
-	message.reply(text);
 }
 
-function checkReply(message) {
+function checkReply(message, flags) {
 	let mentioned = message.mentions.users.has(myId);
     let c = message.content;
     let lc = c.toLowerCase().trim();
@@ -48,8 +69,19 @@ function checkReply(message) {
         return 'крипера отвеа.';
     }
     if (lc === '> 1') {
+		flags.r = false;
         return ['1 <', '< 1', '1 >', '>1<', '<1>'];
     }
+	
+	// Iron Door
+	m = lc.match(/(>\|<|[zcsjh]h?|[жшхwx]+|[\|il]{3})[aeouiyаеёуыоияэю340]+й?([лl]|[\/j][li\|])+[aeouiyаеёуыоияэю340]+й?[zscзс3]+[нnh]+[aeouiyаеёуыоияэю340]+[a-zа-яё0-9]*?[\s,.\?!\\\/\*=+-]*[dtдт]+([wvbвуф]|[\|il]{3})+[aeouiyаеёуыоияэю340]+[rpр]+[a-zа-яё0-9]*/g);
+	if (m) {
+		for (let i = 0; i < m.length; i++) {
+			if (!m[i].match(/^(Железн(ая|ую) Дверь|Железной Двер(и|ью))$/)) {
+				return 'pray to the Iron Door.';
+			}
+		}
+	}
 	
 	// phrase end
 	if (lc.match(/(да|ну) ладно[?!. ]*$/)) {
@@ -64,6 +96,12 @@ function checkReply(message) {
     if (lc.match(/creep[ @_-]creep[?!. ]*$/)) {
         return 'creeperize!';
     }
+	if (lc.match(/ты кто[?!. ]*$/)) {
+		return 'тролль в пальто.';
+	}
+	if (lc.match(/\/?hack[?!. ]*$/)) {
+		return 'Eleite Haxxor 1337.';
+	}
 	
 	// bad words end
     if (lc.match(/(^|[^а-яА-ЯёЁ])блять[?!.,]*$/)) {
@@ -71,7 +109,7 @@ function checkReply(message) {
     }
 	
 	// bad words
-	if (lc.match(/((^|[^а-яА-ЯёЁ])((н[аеи]|п?о)?ху[йеяюиё]|муд[аеияо]|сук[аиеу]|бля|п[ие]до|([усв]|от|р[ао]з|(пр|[дзвпн])[аыоие])?ъ?[её]б|епт|о?п[иеёюй]зд|(вы|у)?си?ра)|(fu|di|su)ck)/)) {
+	if (lc.match(/((^|[^а-яА-ЯёЁ])((с|н[аеи]|[пд]?о)?ху[йеяюиё]|муд[аеияо]|сук[аиеу]|бля|п[ие]до|(у|[св]ъ|от|р[ао]з|(пр|[дзвпн])[аыоие])?[её]б|епт|о?п[иеёюй]зд|(вы|у)?си?ра|([усв]|от|р[ао]з|(пр|[дзвпн])[аыоие])?др[ао]ч)|(fu|di|su)ck)/)) {
 		return 'please, be polite!';
 	}
 	// bad words 2
@@ -88,7 +126,7 @@ function checkReply(message) {
         return '`' + m[0] + '` is deprecated. Use `AntiquiAvium` instead.';
     }
     if (lc.match(/драгон/)) {
-        return ['Он вам не Драгон.', '#онвамнедрагон'];
+        return ['он вам не Драгон.', '#онвамнедрагон'];
     }
 	
 	// как так?
@@ -176,14 +214,78 @@ function checkReply(message) {
 	}
 	
 	// :creeper:
-	if (lc.match(/(^|[^а-яА-ЯёЁ])(creep|крип)/)) {
-		if (message.guild) {
-			let creep = message.guild.emojis.get('276820460744736779');
-			if (creep) {
-				message.react(creep);
+	if (!mentioned && lc.match(/(^|[^а-яА-ЯёЁ])(creep|крип)/)) {
+		if (customReact(message, 'creeper')) {
+			return;
+		}
+	}
+	
+	if (!mentioned) {
+		return;
+	}
+	
+	// eval = evil
+	if (lc.match(/(^|[^а-яА-ЯёЁ])eval/)) {
+		return [
+			'eval равно evil равно на голову anvil.',
+			'eval такой evil, хакер вирус натравил.',
+			'за такой простой eval модер баны раздавал.',
+			'очень простенький eval, комп три ночи остывал.',
+			'за такой простой eval админ опку отзывал.',
+			'сквозь один такой eval хакер деньги отмывал.',
+			'как-то был один eval, кодер стены отмывал.',
+			'милый добренький eval все процессы убивал.',
+			'добрый миленький eval валит сервер наповал.',
+			'запустил один eval, сервер лёг и не вставал.',
+		];
+	}
+	
+	// кто такой
+    if (lc.match(/(^|[^а-яА-ЯёЁ])(знаешь|кто так(ой|ая))/)) {
+		if (lc.match(/(^|[^а-яА-ЯёЁ])руль?т/)) {
+			if (customReact(message, 'rult')) {
 				return;
 			}
 		}
+		if (lc.match(/(^|[^а-яА-ЯёЁ])нами/)) {
+			return 'она не умеет строить. Не пишите ей по этому поводу. Она вам не поможет.';
+		}
+		if (lc.match(/(^|[^а-яА-ЯёЁ])камк/)) {
+			return [
+				'она любит, когда что-то горит.',
+				'она горит, когда что-то любит.',
+			];
+		}
+		if (lc.match(/(^|[^а-яА-ЯёЁ])олен/)) {
+			return 'олень ' + pick([
+				'был завезён человеком в Австралию и Новую Зеландию.',
+				'олицетворяет благородство, величие, красоту, грацию, быстроту.',
+			]);
+		}
+		if (lc.match(/(^|[^а-яА-ЯёЁ])гуго?л/)) {
+			return 'не знаю, загугли.';
+		}
+		if (lc.match(/(^|[^а-яА-ЯёЁ])лайм[оа0]н/)) {
+			return 'Лаймон - создатель Лаймстудии, ЛаймХрома и ЛаймОС, а также ЛаймМобиля, ЛаймШопа, ЛаймКоина и ЛаймСити.';
+		}
+		if (lc.match(/(^|[^а-яА-ЯёЁ])хайв[оа]н/)) {
+			return 'Красный Олень.';
+		}
+		if (lc.match(/(^|[^а-яА-ЯёЁ])пл[еао]ер/)) {
+			return 'Томми Версетти дворами пошёл. В глухом переулке базуку нашёл.';
+		}
+		if (lc.match(/(^|[^а-яА-ЯёЁ])(оранж|кастер)/)) {
+			message.react('🍹');
+			return;
+		}
+		return [
+			'понятия не имею.',
+			'крипер его знает.',
+			'спроси у Гугла.',
+			'не, не слышал.',
+			'эмм.. что?',
+			'эмм.. что? Не, не слышал.',
+		];
 	}
 }
 
@@ -198,10 +300,11 @@ client.on('message', message => {
             return;
         }
 		
-		let mentioned = message.mentions.users.has(myId);
-		
+		let flags = {
+			r: true, // reply with mentioning
+		};
 		// крипера ответ
-		capReply(message, checkReply(message, mentioned));
+		capReply(message, checkReply(message, flags), flags);
 
     } catch(e) {
 		console.error(e);
