@@ -30,6 +30,9 @@ function pick(arr, rand) {
 // хеш от букв строки.
 // чем длиннее строка, тем примерно больше число.
 function hashie(str) {
+	if (typeof str != 'string') {
+		return 0;
+	}
 	let sum = 0;
 	let pos = 0;
 	for (let i = 0; i < str.length; i++) {
@@ -300,7 +303,7 @@ function checkReply(message, flags) {
 	}
 	
 	// почему
-	m = lc.match(/^ *(?:(?:не )?знаешь, )?почему ?([0-9а-яёa-z '",~:%<>*&#=+-]+)/);
+	m = lc.match(/^ *(?:(?:не )?знаешь, )?почему ?([0-9а-яёa-z '",~:%<>*&#=+-]*)/);
 	if (m) {
 		let h = hashie(m[1]);
 		if (h < 100) {
