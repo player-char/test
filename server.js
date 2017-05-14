@@ -202,7 +202,7 @@ function checkReply(message, flags) {
     }
 	
 	// прощание
-	m = lc.match(/(^|[^а-яё])(пока|до скорой|прощай|до свидан[иь]я)/);
+	m = lc.match(/(^|[^а-яё])(пока|до скорой|прощай|до свидан[иь]я)[,.?! ]*/);
 	if (m && (mentioned || m[0].length == lc.length)) {
 		if (chance(0.2)) {
 			return [
