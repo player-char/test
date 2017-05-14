@@ -203,7 +203,7 @@ function checkReply(message, flags) {
 	
 	// прощание
 	m = lc.match(/(^|[^а-яё])(пока|до скорой|прощай|до свидан[иь]я)/);
-	if (m && (mentioned || !message.mentions.users.size)) {
+	if (m && (mentioned || m[0].length == lc.length)) {
 		if (chance(0.2)) {
 			return [
 				'эй, ты куда? Не бросай меня!',
