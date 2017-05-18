@@ -5,6 +5,11 @@ const client = new Discord.Client();
 
 // инициализация
 let myId = '311163859580747778';
+// floodless channels
+let floodless = [
+    myId,
+];
+// user ids to ignore
 let ignores = [
     myId,
 ];
@@ -82,15 +87,18 @@ function capReply(message, text, flags) {
 		text = pick(text);
 	}
 	
-	flags.r = flags.r && !!message.guild; // if PM, write without mention
-	
-	if (flags.r) {
-		// @User, there the text goes.
-		return message.reply(text);
-	} else {
-		// There the text goes.
+	if (flags.r != 'reply' || !message.guild) {
+		// Capitalizing
 		text = text.slice(0, 1).toUpperCase() + text.slice(1);
+	}
+	
+	switch (flags.r) {
+		case 'reply': // reply w/ @mention
+		return message.reply(text);
+		case 'say': // say w/o @mention
 		return message.channel.send(text);
+		case 'dm': // force private conversation
+		return message.author.send(text);
 	}
 }
 
@@ -134,7 +142,7 @@ function checkReply(message, flags) {
         return 'крипера отвеа.';
     }
     if (lc === '> 1') {
-		flags.r = false;
+		flags.r = 'say';
         return ['1 <', '< 1', '1 >', '>1<', '<1>'];
     }
 	if (lc.match(/^\/?hack[?!. ]*$/)) {
@@ -182,13 +190,26 @@ function checkReply(message, flags) {
         return 'нехорошо такие слова употреблять.';
     }
 	
-	// bad words
-	if (lc.match(/((^|[^а-яё])((с|н[аеи]|[пд]?о)?ху[йеяюиё]|муд[аеияо]|сук[аиеу]|бля|п[ие]до|(у|[св]ъ|от|р[ао]з|(пр|[дзвпн])[аыоие])?[её]б|[её]пт|о?п[иеёюй]зд|(вы|у)?си?ра|([усв]|от|р[ао]з|(пр|[дзвпн])[аыоие])?др[ао]ч)|(fu|di|su)ck)/)) {
+	// nasty words
+	if (lc.match(/((^|[^а-яё])(([сао]|н[аеи]|[пд]о|ра[сз]|от|пр[ие])?ху[йеяюиё]|муд[аеияо]|бля|п[ие]д[ои]|(у|[св]ъ|от|р[ао]з|(пр|[дзвпн])[аыоие])?[её]б|[её]пт|о?п[иеёюй]зд|([усв]|от|р[ао]з|(пр|[дзвпн])[аыоие])?др[ао]ч)|(fu|di|su)ck)/)) {
 		return 'please, be polite!';
 	}
-	// bad words 2
-	if (lc.match(/(^|[^а-яё])(д(ау|ове)н|кр[ие]тин|свол[ао]ч|ид[ие]от|мраз)/)) {
-		return 'обзываться нехорошо.';
+	
+	// bad words
+	if (lc.match(/(^|[^а-яё])(д(ау|ове)н|кр[ие]тин|свол[ао]ч|ид[ие]от|мраз|ло[хш]|ублюд)/)) {
+		return 'прости, но обзываться нехорошо.';
+	}
+	
+	// dirty words
+	if (lc.match(/(^|[^а-яё])((по|на|за|вы|у|про)?си?ра|д[еи]рьм|г[оа]ве?н|жоп|(на|за|вы|об|раз)?бл[её]в)/)) {
+		message.react('🚽');
+		return;
+	}
+	
+	// dog words
+	if (lc.match(/(^|[^а-яё])(сук[аиеу])/)) {
+		message.react('🐶');
+		return;
 	}
 	
 	// ники Драгона
@@ -268,7 +289,7 @@ function checkReply(message, flags) {
 	
 	// yeah, but ...
 	if (lc.match(/^yeah, but/m)) {
-		flags.r = false;
+		flags.r = 'say';
 		return '> Yeah, but\nYabbits live in the woods.';
 	}
 	
@@ -284,11 +305,23 @@ function checkReply(message, flags) {
 	}
 	
 	// :creeper:
-	if (!mentioned && lc.match(/(^|[^а-яА-ЯёЁ])(creep|крип)/)) {
+	if (!mentioned && lc.match(/(^|[^а-яё])(creep|крип)/)) {
 		if (customReact(message, 'creeper')) {
 			return;
 		}
 	}
+	
+	// give
+	m = lc.match(/(?:^|[^а-яё])(?:вы)?дай(?:те)?(?: мне)? +([0-9]*)(?: штуки? )? *([0-9а-яёa-z '"&-]*)/);
+	if (m) {
+		let count = m[1] ? +m[1] : 64;
+		let item = m[2].trim().toUpperCase();
+		if (item.length <= 32 && item.length >= 2) {
+			flags.r = 'say';
+			return '*Выдано **' + count + '** штук **' + item + '** игроку **<@' + message.author.id + '>**.*';
+		}
+	}
+	
 	// банан
 	if (!mentioned && lc.match(/банан/)) {
 		message.react('🍌');
@@ -302,6 +335,29 @@ function checkReply(message, flags) {
 		return;
 	}
 	
+	
+	// short phrases
+	if (lc.match(/^ч(т|ег)о[?!. ]*$/)) {
+		return 'ничего (:';
+	}
+	if (lc.match(/^как[?!. ]*$/)) {
+		return 'а вот так!';
+	}
+	if (lc.match(/^test[?!. ]*$/)) {
+		return 'go go test yourself!';
+	}
+	if (lc.match(/^фас([^а-яё]|$)/)) {
+		return 'я тебе не пёс!';
+	}
+	if (lc.match(/(^|, +|-)да[?!. ]*$/)) {
+		return 'на плите сковорода.';
+	}
+	
+	// shutting up or getting out
+	if (lc.match(/((^|[^а-яё])((у|за)(молчи|ткнис)|от((ста|вя)нь|вали))|^(вон|брысь|прочь|пош[ёе]л|у(й|х[оа])ди))/)) {
+		message.react(pick('😋 😛 😝 🙃 😑 😷'.split(' ')));
+		return;
+	}
 	
 	// eval = evil
 	if (lc.match(/(^|[^а-яё])eval/)) {
@@ -355,7 +411,7 @@ function checkReply(message, flags) {
 	}
 	
 	// робот
-	if (lc.match(/(^|[^а-яё])[вт]ы (часом )?(не )?(ро)?бот/)) {
+	if (lc.match(/(^|[^а-яё])[вт]ы,? (часом,? )?(не )?(ро)?бот/)) {
 		return 'нет, я скрипт.';
 	}
 	
@@ -456,8 +512,8 @@ function checkReply(message, flags) {
 	
 	// го в лс
 	if (lc.match(/(го|давай|иди|дуй|по(шли|йдём)|зайди) (лучше )?(ко мне )?в (лс|переписку)/)) {
-		message.author.send('Да-да, я тут.');
-		return;
+		flags.r = 'dm';
+		return 'да-да, я тут.';
 	}
 	
 	// банан
@@ -483,13 +539,14 @@ function checkReply(message, flags) {
 		return [
 			'а?',
 			'что?',
+			'мм?',
 			'зачем звал?',
 			'ку-ку.',
 			'привет.',
 			'да ладно, перестань. Всё равно я ещё мало чего умею.',
 		];
 	} else {
-		message.react(pick('👋 🖐 😑 😐 😁 🙃 🙄 😓 😪 🍌 📯 🎺 🏸'.split(' ')));
+		message.react(pick('👋 🖐 😑 😐 😁 🙃 🙄 😓 😪 😤 😷 😶 🍌 📯 🎺 🏸'.split(' ')));
 		return;
 	}
 	
@@ -498,7 +555,7 @@ function checkReply(message, flags) {
 function processMessage(message) {
     try {
 		let flags = {
-			r: true, // reply with mentioning
+			r: 'reply', // reply with mentioning by default
 		};
 		// крипера ответ
 		capReply(message, checkReply(message, flags), flags);
@@ -523,7 +580,7 @@ client.on('message', message => {
 	
 	// delay is necessary for correct message ordering
 	// because sometimes bot is too fast
-	setTimeout(processMessage, 100, message);
+	setTimeout(processMessage, 80, message);
 });
 
 // сразу, как зайдёт
