@@ -360,15 +360,16 @@ function checkReply(message, flags) {
 	}
 	
 	// monster
-	if (lc.match(/^((с|по)дохни|(го|(вы|по|у)м)ри|выпились|die|burn|)/)) {
+	if (lc.match(/^((с|по)дохни|(го|(вы|по|у)м)ри|выпились|die|burn)/)) {
 		return 'you are a monster.';
 	}
 	
 	// you're bad (or good, it doesn't matter)
 	m = lc.match(/^ты ([а-яё]+)/);
 	if (m && m[1].match(/([ыои]й|[ая]я|[ое][её])$/)) {
-		message.react(pick('😭 😥 😢 😕'.split(' ')));
-		return;
+		return 'you are a monster.';
+		//message.react(pick('😭 😥 😢 😕'.split(' ')));
+		//return;
 	}
 	
 	// eval = evil
