@@ -359,6 +359,18 @@ function checkReply(message, flags) {
 		return;
 	}
 	
+	// monster
+	if (lc.match(/^((с|по)дохни|(го|(вы|по|у)м)ри|выпились|die|burn|)/)) {
+		return 'you are a monster.';
+	}
+	
+	// you're bad (or good, it doesn't matter)
+	m = lc.match(/^ты ([а-яё]+)/);
+	if (m && m[1].match(/([ыои]й|[ая]я|[ое][её])$/)) {
+		message.react(pick('😭 😥 😢 😕'.split(' ')));
+		return;
+	}
+	
 	// eval = evil
 	if (lc.match(/(^|[^а-яё])eval/)) {
 		return [
@@ -383,7 +395,7 @@ function checkReply(message, flags) {
 	}
 	
 	// ты тут?
-	if (lc.match(/(^|[^а-яё])(ты (где|тут|куда)|(где|куда) ты)/)) {
+	if (lc.match(/(^|[^а-яё])(ты (где|тут|куда|здесь)|(где|куда) ты)/)) {
 		return [
 			'я тут.',
 			'я здесь.',
@@ -546,7 +558,7 @@ function checkReply(message, flags) {
 			'да ладно, перестань. Всё равно я ещё мало чего умею.',
 		];
 	} else {
-		message.react(pick('👋 🖐 😑 😐 😁 🙃 🙄 😓 😪 😤 😷 😶 🍌 📯 🎺 🏸'.split(' ')));
+		message.react(pick('👋 🖐 😑 😐 😁 🙃 🙄 😓 😪 😷 😶 🍌 📯 🎺 🏸'.split(' ')));
 		return;
 	}
 	
