@@ -1,5 +1,6 @@
 // Дискорд-бот "Крипушка"
 
+const ytdl = require('ytdl-core');
 const Discord = require('discord.js');
 const client = new Discord.Client();
 
@@ -7,15 +8,14 @@ const client = new Discord.Client();
 let myId = '311163859580747778';
 // floodless channels
 let floodless = [
-    '236835572692287488',
+	'236835572692287488',
 ];
 // user ids to ignore
 let ignores = [
-    myId,
+	myId,
 ];
 let wrecked = false;
 let hidden = true;
-
 
 // выдаёт true с указанным шансом
 function chance(a) {
@@ -102,13 +102,139 @@ function capReply(message, text, flags) {
 	}
 }
 
+// данные о музыкальных каналах
+let mus = {
+	maxList: 10,
+	'175951720990507008': {
+		channel: '315439572710326284',
+		accept: '315445827772481537',
+		left: 20 * 60,
+		c: null,
+		ch: null,
+		ac: null,
+		curr: null,
+		list: [],
+	},
+};
+/*
+let mus = {
+	'server-id': {
+		channel: 'voice-id',
+		accept: 'chat-id',
+		left: 20 * 60,
+		c: null,
+		ch: null,
+		curr: null,
+		list: [
+			{
+				message: 'message-id',
+				user: 'user-id',
+				url: 'http://',
+			},
+		],
+	},
+}
+*/
+
+function musicTryPut(url, message, flags) {
+	if (!message.guild) {
+		return 'в лс, да? Не так быстро.';
+	}
+	if (!mus[message.guild.id]) {
+		return 'вы серваком ошиблись.';
+	}
+	let cmus = mus[message.guild.id];
+	if (message.channel.id != cmus.accept) {
+		flags.r = 'dm';
+		return 'иди в <#' + cmus.accept + '>, запросы на музыку принимаются там.';
+	}
+	
+	if (url.length > 80 || url.length < 5) {
+		return 'какая-то длина ссылки не такая.';
+	}
+	
+	let ch = message.guild.channels[cmus.channel];
+	if (!ch.joinable) {
+		return 'что-то канал закрытый.';
+	}
+	if (!ch.speakable) {
+		return 'что-то канал неразговорный.';
+	}
+	if (ch.full) {
+		return 'канал забит, не могу залезть.';
+	}
+	if (ch.members.has(message.author.id)) {
+		return 'эй, зайди в голосовой канал `' + ch.name + '`, для кого я играть-то буду?';
+	}
+	
+	if (cmus.list.length >= mus.maxList) {
+		return 'довольно добавлять, пусть сначала текущее доиграет.';
+	}
+	
+	cmus.ch = ch;
+	cmus.ac = message.guild.channels[cmus.accept];
+	
+	cmus.list.push({
+		message: message,
+		user: message.author,
+		url: url,
+	});
+	
+	if (!cmus.c) {
+		cmus.c = 'pending';
+		ch.join().then(c => {
+			cmus.c = c;
+			try {
+				musicPlay(cmus);
+			} catch(e) {
+				return 'упс, не получилось поставить.';
+				console.error(e);
+			}
+		}).catch(e => {
+			console.log('Failed to join voice channel.');
+			console.error(e);
+			cmus.c = null;
+		});
+	}
+	
+	return 'добавлено в очередь (' + cmus.list.length + '/' + mus.maxList + ').';
+}
+
+function musicPlay(cmus) {
+	if (cmus.list.length == 0) {
+		cmus.c = null;
+		cmus.ch.leave();
+	}
+	
+	cmus.curr = cmus.list[0];
+	cmus.list.shift();
+	const stream = ytdl(cmus.curr, {filter: 'audioonly'});
+	const dispatcher = connection.playStream(stream, streamOptions);
+	
+	dispatcher.on('start', () => {
+		cmus.curr.message.reply('играет твоя музыка: ' + cmus.curr.url + '.');
+	});
+	
+	dispatcher.on('end', reason => {
+		musicPlay(cmus);
+	});
+	
+	dispatcher.on('error', e => {
+		console.log('Music playing error!');
+		console.error(e);
+		cmus.curr.message.reply('не получилось проиграть `' + cmus.curr.url + '`.\nЕсли что, работают только ссылки на видео с YouTube.');
+		
+		musicPlay(cmus);
+	});
+}
+
 // чем отвечать будем
 function checkReply(message, flags) {
 	let mentioned = message.mentions.users.has(myId) || (!message.guild ? 'dm' : false);
-    let uc = message.content.trim();
-    let lc = uc.toLowerCase();
+	let uc = message.content.trim();
+	let lc = uc.toLowerCase();
 	let m = null;
-    
+	
 	function cutOff(m) {
 		if (m.index) {
 			lc = (lc.slice(0, m.index) + ' ' + lc.slice(m.index + m[0].length)).trim();
@@ -135,16 +261,16 @@ function checkReply(message, flags) {
 	
 	
 	// exact match
-    if (lc === 'нет') {
-        return 'крипера ответ.';
-    }
-    if (lc === 'неа') {
-        return 'крипера отвеа.';
-    }
-    if (lc === '> 1') {
+	if (lc === 'нет') {
+		return 'крипера ответ.';
+	}
+	if (lc === 'неа') {
+		return 'крипера отвеа.';
+	}
+	if (lc === '> 1') {
 		flags.r = 'say';
-        return ['1 <', '< 1', '1 >', '>1<', '<1>'];
-    }
+		return ['1 <', '< 1', '1 >', '>1<', '<1>'];
+	}
 	if (lc.match(/^\/?hack[?!. ]*$/)) {
 		return 'Eleite Haxxor 1337.';
 	}
@@ -175,9 +301,9 @@ function checkReply(message, flags) {
 	if (lc.match(/ну и[?!. ]*$/)) {
 		return 'ну и ну!';
 	}
-    if (lc.match(/creep[ @_-]creep[?!. ]*$/)) {
-        return 'creeperize!';
-    }
+	if (lc.match(/creep[ @_-]creep[?!. ]*$/)) {
+		return 'creeperize!';
+	}
 	if (lc.match(/ты кто[?!. ]*$/)) {
 		return 'тролль в пальто.';
 	}
@@ -186,9 +312,9 @@ function checkReply(message, flags) {
 	}
 	
 	// bad words end
-    if (lc.match(/(^|[^а-яё])блять[?!.,]*$/)) {
-        return 'нехорошо такие слова употреблять.';
-    }
+	if (lc.match(/(^|[^а-яё])блять[?!.,]*$/)) {
+		return 'нехорошо такие слова употреблять.';
+	}
 	
 	// nasty words
 	if (lc.match(/((^|[^а-яё])(([сао]|н[аеи]|[пд]о|ра[сз]|от|пр[ие])?ху[йеяюиё]|муд[аеияо]|бля|п[ие]д[ои]|(у|[св]ъ|от|р[ао]з|(пр|[дзвпн])[аыоие])?[её]б|[её]пт|о?п[иеёюй]зд|([усв]|от|р[ао]з|(пр|[дзвпн])[аыоие])?др[ао]ч)|(fu|di|su)ck)/)) {
@@ -212,25 +338,32 @@ function checkReply(message, flags) {
 		return;
 	}
 	
+	// play music
+	m = uc.match(/(?:поставь|добавь|запусти|(про)?играй)(?:те)?(?: в очередь)? [<`]?(https?:\/\/[0-9a-zA-Z.\/?=%#_+-]+)/i);
+	if (m) {
+		return musicTryPut(m[1], message);
+		//message.react('🤔'); // thonkang
+	}
+	
 	// ники Драгона
 	m = uc.match(/(Dragon2488|Archengius)/);
-    if (m) {
-        return '`' + m[0] + '` is deprecated. Use `AntiquiAvium` instead.';
-    }
-    if (lc.match(/(^|[^а-яё])драгон/)) {
-        return ['он вам не Драгон.', '#онвамнедрагон'];
-    }
+	if (m) {
+		return '`' + m[0] + '` is deprecated. Use `AntiquiAvium` instead.';
+	}
+	if (lc.match(/(^|[^а-яё])драгон/)) {
+		return ['он вам не Драгон.', '#онвамнедрагон'];
+	}
 	
 	// как так?
-    if (lc.match(/(^|[^а-яё])как (же )?так[?!]*$/)) {
-        return [
-            'ну вот как-то так.',
-            'как-то так, да вот как бы не так.',
-            'вот как-то так-то так вот.',
-            'как-то так, да никак-то никак.',
-            'так-то так, да как-то так как никак.',
-        ];
-    }
+	if (lc.match(/(^|[^а-яё])как (же )?так[?!]*$/)) {
+		return [
+			'ну вот как-то так.',
+			'как-то так, да вот как бы не так.',
+			'вот как-то так-то так вот.',
+			'как-то так, да никак-то никак.',
+			'так-то так, да как-то так как никак.',
+		];
+	}
 	
 	// прощание
 	m = lc.match(/(^|[^а-яё])(пока(?=([^а-яё]|$))|прощай|до (свидан[иь]я|скорой( встречи)|встречи))[,.?! ]*/);
@@ -456,7 +589,7 @@ function checkReply(message, flags) {
 	}
 	
 	// кто такой кто-то
-    if (lc.match(/(^|[^а-яё])(знаешь|[чк]то (за|так(ой|ая|ое)))/)) {
+	if (lc.match(/(^|[^а-яё])(знаешь|[чк]то (за|так(ой|ая|ое)))/)) {
 		
 		let known = {
 			'руль?т': () => {
@@ -566,18 +699,18 @@ function checkReply(message, flags) {
 }
 
 function processMessage(message) {
-    try {
+	try {
 		let flags = {
 			r: 'reply', // reply with mentioning by default
 		};
 		// крипера ответ
 		capReply(message, checkReply(message, flags), flags);
 
-    } catch(e) {
+	} catch(e) {
 		console.error(e);
 		//wrecked = true;
-        //message.reply(e.name + ': ' + e.message);
-    }
+		//message.reply(e.name + ': ' + e.message);
+	}
 }
 
 // при сообщениях
@@ -598,7 +731,7 @@ client.on('message', message => {
 
 // сразу, как зайдёт
 client.on('ready', () => {
-    console.log('I am ready!');
+	console.log('I am ready!');
 	setStatus();
 });
 
