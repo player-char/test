@@ -6,7 +6,8 @@
   },
   "dependencies": {
     "discord.js": "hydrabolt/discord.js",
-    "ytdl": "fent/node-ytdl-core"
+	"node-opus": "^0.2.0",
+    "ytdl-core": "^0.14.0"
   },
   "engines": {
     "node": ">=6.0.0"
