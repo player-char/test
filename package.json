@@ -2,11 +2,11 @@
   "name": "creeperdiscordbot",
   "version": "1.0.0",
   "scripts": {
+    "preinstall": "npm i -g ffmpeg-binaries",
     "start": "node server.js"
   },
   "dependencies": {
     "discord.js": "hydrabolt/discord.js",
-    "ffmpeg-binaries": "^3.2.0",
     "node-opus": "^0.2.5",
     "ytdl-core": "^0.14.0"
   },
