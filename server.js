@@ -116,59 +116,52 @@ let mus = {
 		list: [],
 	},
 };
-/*
-let mus = {
-	'server-id': {
-		channel: 'voice-id',
-		accept: 'chat-id',
-		left: 20 * 60,
-		c: null,
-		ch: null,
-		curr: null,
-		list: [
-			{
-				message: 'message-id',
-				user: 'user-id',
-				url: 'http://',
-			},
-		],
-	},
-}
-*/
 
-function musicPut(url, message, flags) {
-	if (!message.guild) {
-		return 'в лс, да? Не так быстро.';
-	}
-	if (!mus[message.guild.id]) {
-		return 'вы серваком ошиблись.';
-	}
-	let cmus = mus[message.guild.id];
-	if (message.channel.id != cmus.accept) {
-		flags.r = 'dm';
-		return 'иди в <#' + cmus.accept + '>, запросы на музыку принимаются там.';
+function musicProcess() {
+	let uc = message.content.trim();
+	let m;
+	
+	message.delete();
+	
+	// play music
+	m = uc.match(/https?:\/\/[0-9a-zA-Z.\/?=%#_+-]+/);
+	if (m) {
+		let result = musicPut(m[0], message);
+		if (result) {
+			message.author.send(result);
+		}
+		return;
 	}
 	
-	if (url.length > 80 || url.length < 5) {
-		return 'какая-то длина ссылки не такая.';
+	// skip
+	if (uc.match(/(skip|скип|пропусти)/)) {
+		//...
+		return;
+	}
+}
+
+function musicPut(url, message) {
+	let cmus = mus[message.guild.id];
+	if (url.length > 120 || url.length < 10) {
+		return 'Какая-то длина ссылки не такая.';
 	}
 	
 	let ch = message.guild.channels.get(cmus.channel);
 	if (!ch.joinable) {
-		return 'что-то канал закрытый.';
+		return 'Что-то канал закрытый.';
 	}
 	if (!ch.speakable) {
-		return 'что-то канал неразговорный.';
+		return 'Что-то канал неразговорный.';
 	}
 	if (ch.full) {
-		return 'канал забит, не могу залезть.';
+		return 'Канал забит, не могу залезть.';
 	}
-	if (ch.members.has(message.author.id)) {
-		return 'эй, зайди в голосовой канал `' + ch.name + '`, для кого я играть-то буду?';
+	if (!ch.members.has(message.author.id)) {
+		return 'Эй, сначала зайди в голосовой канал `' + ch.name + '`, для кого я играть-то буду?';
 	}
 	
 	if (cmus.list.length >= mus.maxList) {
-		return 'довольно добавлять, пусть сначала текущее доиграет.';
+		return 'Довольно добавлять, пусть сначала текущее доиграет.';
 	}
 	
 	cmus.ch = ch;
@@ -187,17 +180,21 @@ function musicPut(url, message, flags) {
 			try {
 				musicPlay(cmus);
 			} catch(e) {
-				return 'упс, не получилось поставить.';
+				return 'Упс, что-то не получилось поставить.';
 				console.error(e);
 			}
 		}).catch(e => {
+			return 'Ой, я споткнулся об порог, когда заходил в канал.';
 			console.log('Failed to join voice channel.');
 			console.error(e);
 			cmus.c = null;
 		});
 	}
 	
-	return 'добавлено в очередь (' + cmus.list.length + '/' + mus.maxList + ').';
+	// edit status message here
+	return;
+	
+	//return 'добавлено в очередь (' + cmus.list.length + '/' + mus.maxList + ').';
 }
 
 function musicPlay(cmus) {
@@ -212,7 +209,7 @@ function musicPlay(cmus) {
 	const dispatcher = connection.playStream(stream, streamOptions);
 	
 	dispatcher.on('start', () => {
-		cmus.curr.message.reply('играет твоя музыка: ' + cmus.curr.url + '.');
+		cmus.curr.author.send('Играет твоя музыка: ' + cmus.curr.url + ' (потом сделаю, чтобы это не писалось).');
 	});
 	
 	dispatcher.on('end', reason => {
@@ -222,7 +219,7 @@ function musicPlay(cmus) {
 	dispatcher.on('error', e => {
 		console.log('Music playing error!');
 		console.error(e);
-		cmus.curr.message.reply('не получилось проиграть `' + cmus.curr.url + '`.\nЕсли что, работают только ссылки на видео с YouTube.');
+		cmus.curr.author.send('Не получилось проиграть `' + cmus.curr.url + '`.\nЕсли что, работают только ссылки на видео с YouTube.');
 		
 		musicPlay(cmus);
 	});
@@ -336,13 +333,6 @@ function checkReply(message, flags) {
 	if (lc.match(/(^|[^а-яё])(сук[аиеу])/)) {
 		message.react('🐶');
 		return;
-	}
-	
-	// play music
-	m = uc.match(/(?:поставь|добавь|запусти|(?:про)?играй)(?:те)?(?: в очередь)? [<`]?(https?:\/\/[0-9a-zA-Z.\/?=%#_+-]+)/i);
-	if (m) {
-		return musicPut(m[1], message);
-		//message.react('🤔'); // thonkang
 	}
 	
 	// ники Драгона
@@ -721,6 +711,11 @@ client.on('message', message => {
 	
 	// бот должен игнорить себя
 	if (ignores.indexOf(message.author.id) !== -1) {
+		return;
+	}
+	
+	if (message.guild && mus[message.guild.id] && message.channel.id == mus[message.guild.id].channel) {
+		musicProcess(message);
 		return;
 	}
 	
