@@ -136,7 +136,7 @@ let mus = {
 }
 */
 
-function musicTryPut(url, message, flags) {
+function musicPut(url, message, flags) {
 	if (!message.guild) {
 		return 'в лс, да? Не так быстро.';
 	}
@@ -153,7 +153,7 @@ function musicTryPut(url, message, flags) {
 		return 'какая-то длина ссылки не такая.';
 	}
 	
-	let ch = message.guild.channels[cmus.channel];
+	let ch = message.guild.channels.get(cmus.channel);
 	if (!ch.joinable) {
 		return 'что-то канал закрытый.';
 	}
@@ -172,7 +172,7 @@ function musicTryPut(url, message, flags) {
 	}
 	
 	cmus.ch = ch;
-	cmus.ac = message.guild.channels[cmus.accept];
+	cmus.ac = message.guild.channels.get(cmus.accept);
 	
 	cmus.list.push({
 		message: message,
@@ -341,7 +341,7 @@ function checkReply(message, flags) {
 	// play music
 	m = uc.match(/(?:поставь|добавь|запусти|(?:про)?играй)(?:те)?(?: в очередь)? [<`]?(https?:\/\/[0-9a-zA-Z.\/?=%#_+-]+)/i);
 	if (m) {
-		return musicTryPut(m[1], message);
+		return musicPut(m[1], message);
 		//message.react('🤔'); // thonkang
 	}
 	
