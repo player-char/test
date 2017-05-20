@@ -5,7 +5,8 @@
     "start": "node server.js"
   },
   "dependencies": {
-    "discord.js": "hydrabolt/discord.js"
+    "discord.js": "hydrabolt/discord.js",
+    "ytdl": "fent/node-ytdl-core"
   },
   "engines": {
     "node": ">=6.0.0"
