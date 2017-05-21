@@ -747,12 +747,15 @@ function musicPut(url, message) {
 	}
 	
 	let ch = message.guild.voiceChannels.find(c => c.id == cmus.channel);
+	
+	cmus.ch = ch;
+	cmus.users = ch.members.length;
+	cmus.ac = message.guild.textChannels.find(c => c.id == cmus.accept);
+	
 	if (!ch.members.find(c => c.id == message.author.id)) {
 		return ret('Эй, сначала зайди в голосовой канал `' + ch.name + '`, для кого я играть-то буду?');
 	}
 	
-	cmus.ch = ch;
-	cmus.ac = message.guild.textChannels.find(c => c.id == cmus.accept);
 	
 	if (cmus.list.length >= mus.maxList) {
 		ret('Довольно добавлять, пусть сначала текущее доиграет.');
@@ -861,7 +864,9 @@ function musicPlay(cmus) {
 
 function musicUpdate(cmus) {
 	
-	let ctext = 'Текущая музыка: ' + cmus.cur ? '<пусто>' : cmus.curr.url + '\n';
+	let ctext = 'Текущая музыка: ' + cmus.curr ? '<пусто>' : cmus.curr.url + '\n';
+	
+	cmus.users = cmus.ch.members.length;
 	
 	if (cmus.skip.length) {
 		ctext += 'За пропуск проголосовали: ' + cmus.skip.length + ' из ' + Math.floor(cmus.users / 2) + '.\n'
@@ -890,7 +895,7 @@ function musicUpdate(cmus) {
 	if (cmus.stat) {
 		return cmus.stat.edit(ctext);
 	} else {
-		cmus.accept.fetchMessages(15).then(obj => {
+		cmus.ac.fetchMessages(15).then(obj => {
 			let arr = obj.messages;
 			for (let i = arr.length - 1; i >= 0; i--) {
 				if (arr[i].author.id == myId) {
@@ -898,7 +903,7 @@ function musicUpdate(cmus) {
 					return cmus.stat.edit(ctext);
 				}
 			}
-			return cmus.stat = cmus.accept.sendMessage(ctext).then(message => {
+			return cmus.stat = cmus.ac.sendMessage(ctext).then(message => {
 				return cmus.stat = message;
 			});
 		});
@@ -906,7 +911,7 @@ function musicUpdate(cmus) {
 	if (cmus.stat) {
 		cmus.stat.edit(ctext);
 	} else {
-		cmus.accept.sendMessage(ctext);
+		cmus.ac.sendMessage(ctext);
 	}
 	
 }
