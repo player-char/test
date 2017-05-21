@@ -828,7 +828,7 @@ function musicPlay(cmus) {
 	
 	// note: discordie encoder does resampling if rate != 48000
 	
-	var encoderStream = cmus.c.getEncoderStream(options);
+	var encoderStream = cmus.c.getEncoderStream();
 	if (!encoderStream) {
 		return console.log('Unable to get encoder stream, connection is disposed');
 	}
