@@ -699,6 +699,8 @@ function musicProcess(message) {
 	let uc = message.content.trim();
 	let m;
 	
+	autoRemove(message);
+	
 	// play music
 	m = uc.match(/https?:\/\/[0-9a-zA-Z.\/?=%#_+-]+/);
 	if (m) {
@@ -806,6 +808,7 @@ function musicPlay(cmus) {
 	console.log('[playing]');
 	if (cmus.list.length == 0) {
 		cmus.c = null;
+		cmus.curr = null;
 		cmus.ch.leave();
 		musicUpdate(cmus);
 		return;
@@ -818,13 +821,14 @@ function musicPlay(cmus) {
 	//const dispatcher = c.playStream(stream, streamOptions);
 	
 	var mp3decoder = new lame.Decoder();
-	stream.pipe(mp3decoder);
+	stream.pipe(mp3decoder).on('format', console.log);
+	
+	cmus.skip = [];
 	
 	musicUpdate(cmus);
 	
 	// note: discordie encoder does resampling if rate != 48000
 	
-	console.log('[format]');
 	
 	var options = {
 		frameDuration: 60,
@@ -890,7 +894,7 @@ function musicUpdate(cmus) {
 		ctext += ' <пусто>';
 	}
 	
-	ctext += 'Киньте ссылку в чат для добавления в очередь.';
+	ctext += '\nКиньте ссылку в чат для добавления в очередь.';
 	
 	ctext = '```\n' + ctext + '\n```';
 	
