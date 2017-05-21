@@ -121,7 +121,9 @@ function musicProcess(message) {
 	let uc = message.content.trim();
 	let m;
 	
-	message.delete();
+	setTimeout(function() {
+		message.delete();
+	}, 1500);
 	
 	// play music
 	m = uc.match(/https?:\/\/[0-9a-zA-Z.\/?=%#_+-]+/);
