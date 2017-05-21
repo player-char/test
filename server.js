@@ -692,7 +692,7 @@ let mus = {
 function autoRemove(message) {
 	setTimeout(function() {
 		message.delete();
-	}, 1500);
+	}, 2000);
 }
 
 function musicProcess(message) {
@@ -871,7 +871,7 @@ function musicPlay(cmus) {
 
 function musicUpdate(cmus) {
 	
-	let ctext = 'Текущая музыка: ' + (cmus.curr ? '<пусто>' : cmus.curr.url) + '\n';
+	let ctext = 'Текущая музыка: ' + (cmus.curr ? cmus.curr.url : '<пусто>') + '\n';
 	
 	cmus.users = cmus.ch.members.length;
 	
