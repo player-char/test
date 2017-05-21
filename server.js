@@ -16,7 +16,7 @@ let ignores = [
 	myId,
 ];
 let wrecked = false;
-let hidden = true;
+let hidden = false;
 
 // выдаёт true с указанным шансом
 function chance(a) {
@@ -638,6 +638,7 @@ var auth = {token: myToken};
 clientMusic.connect(auth);
 
 clientMusic.Dispatcher.on("GATEWAY_READY", e => {
+	clientMusic.user.setStatus('invisible');
 	console.log('Discordie is ready!');
 });
 
@@ -712,11 +713,11 @@ function musicPut(url, message) {
 	
 	function ret(result) {
 		message.author.openDM().then(dm => {
-			sendMessage(result);
+			dm.sendMessage(result);
 		});
 		return false;
 	}
-
+	
 	if (url.length > 120 || url.length < 10) {
 		return ret('Какая-то длина ссылки не такая.');
 	}
@@ -741,7 +742,7 @@ function musicPut(url, message) {
 		});
 		
 		
-		updateMessage(cmus);
+		musicUpdate(cmus);
 		// edit status message here
 		
 	}
