@@ -779,7 +779,7 @@ function musicPlay(cmus) {
 	
 	cmus.curr = cmus.list[0];
 	cmus.list.shift();
-	const stream = ytdl(cmus.curr, {filter: 'audioonly'});
+	const stream = ytdl(cmus.curr.url, {filter: 'audioonly'});
 	//const dispatcher = c.playStream(stream, streamOptions);
 	
 	var mp3decoder = new lame.Decoder();
