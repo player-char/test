@@ -2,12 +2,12 @@
   "name": "creeperdiscordbot",
   "version": "1.0.0",
   "scripts": {
-    "start": "node server.js"
+    "start": "FFMPEG_PATH=/opt/app-root/src/node_modules/ffmpeg-binaries/linux/ffmpeg \nFFPROBE_PATH=/opt/app-root/src/node_modules/ffmpeg-binaries/linux/ffprobe \nnode server.js"
   },
   "dependencies": {
+    "discord.js": "12.0.0",
     "ffmpeg-binaries": "3.2.2",
     "node-opus": "^0.2.5",
-    "discord.js": "11.1.0",
     "ytdl-core": "^0.14.0"
   },
   "engines": {
