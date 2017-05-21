@@ -126,10 +126,7 @@ function musicProcess() {
 	// play music
 	m = uc.match(/https?:\/\/[0-9a-zA-Z.\/?=%#_+-]+/);
 	if (m) {
-		let result = musicPut(m[0], message);
-		if (result) {
-			message.author.send(result);
-		}
+		musicPut(m[0], message);
 		return;
 	}
 	
@@ -142,36 +139,46 @@ function musicProcess() {
 
 function musicPut(url, message) {
 	let cmus = mus[message.guild.id];
+	
+	function ret(result) {
+		message.author.send(result);
+		return false;
+	}
+
 	if (url.length > 120 || url.length < 10) {
-		return 'Какая-то длина ссылки не такая.';
+		return ret('Какая-то длина ссылки не такая.');
 	}
 	
 	let ch = message.guild.channels.get(cmus.channel);
 	if (!ch.joinable) {
-		return 'Что-то канал закрытый.';
+		return ret('Что-то канал закрытый.');
 	}
 	if (!ch.speakable) {
-		return 'Что-то канал неразговорный.';
+		return ret('Что-то канал неразговорный.');
 	}
 	if (ch.full) {
-		return 'Канал забит, не могу залезть.';
+		return ret('Канал забит, не могу залезть.');
 	}
 	if (!ch.members.has(message.author.id)) {
-		return 'Эй, сначала зайди в голосовой канал `' + ch.name + '`, для кого я играть-то буду?';
-	}
-	
-	if (cmus.list.length >= mus.maxList) {
-		return 'Довольно добавлять, пусть сначала текущее доиграет.';
+		return ret('Эй, сначала зайди в голосовой канал `' + ch.name + '`, для кого я играть-то буду?');
 	}
 	
 	cmus.ch = ch;
 	cmus.ac = message.guild.channels.get(cmus.accept);
 	
-	cmus.list.push({
-		message: message,
-		user: message.author,
-		url: url,
-	});
+	if (cmus.list.length >= mus.maxList) {
+		ret('Довольно добавлять, пусть сначала текущее доиграет.');
+	} else {
+		
+		cmus.list.push({
+			message: message,
+			user: message.author,
+			url: url,
+		});
+		
+		// edit status message here
+		
+	}
 	
 	if (!cmus.c) {
 		cmus.c = 'pending';
@@ -180,19 +187,18 @@ function musicPut(url, message) {
 			try {
 				musicPlay(cmus);
 			} catch(e) {
-				return 'Упс, что-то не получилось поставить.';
+				ret('Упс, что-то не получилось поставить.');
 				console.error(e);
 			}
 		}).catch(e => {
-			return 'Ой, я споткнулся об порог, когда заходил в канал.';
+			ret('Ой, я споткнулся об порог, когда заходил в канал.');
 			console.log('Failed to join voice channel.');
 			console.error(e);
 			cmus.c = null;
 		});
 	}
 	
-	// edit status message here
-	return;
+	return true;
 	
 	//return 'добавлено в очередь (' + cmus.list.length + '/' + mus.maxList + ').';
 }
@@ -206,7 +212,7 @@ function musicPlay(cmus) {
 	cmus.curr = cmus.list[0];
 	cmus.list.shift();
 	const stream = ytdl(cmus.curr, {filter: 'audioonly'});
-	const dispatcher = connection.playStream(stream, streamOptions);
+	const dispatcher = c.playStream(stream, streamOptions);
 	
 	dispatcher.on('start', () => {
 		cmus.curr.author.send('Играет твоя музыка: ' + cmus.curr.url + ' (потом сделаю, чтобы это не писалось).');
@@ -714,7 +720,7 @@ client.on('message', message => {
 		return;
 	}
 	
-	if (message.guild && mus[message.guild.id] && message.channel.id == mus[message.guild.id].channel) {
+	if (message.guild && mus[message.guild.id] && mus[message.guild.id].accept == message.channel.id) {
 		musicProcess(message);
 		return;
 	}
