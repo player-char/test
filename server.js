@@ -706,6 +706,27 @@ function musicProcess(message) {
 		//...
 		return;
 	}
+	
+	// stop
+	if (uc.match(/stop/)) {
+		let cmus = mus[message.guild.id];
+		if (!cmus) {
+			return;
+		}
+		if (cmus.ch) {
+			cmus.c.getEncoderStream().unpipeAll();
+			cmus.c = null;
+			cmus.list = [];
+			cmus.ch.leave();
+		} else {
+			let tch = message.guild.voiceChannels.find(c => c.id == cmus.channel);
+			if (tch && tch.joined) {
+				tch.leave();
+				console.log('left.');
+			}
+		}
+		return;
+	}
 }
 
 function musicPut(url, message) {
@@ -772,6 +793,7 @@ function musicPut(url, message) {
 }
 
 function musicPlay(cmus) {
+	console.log('[playing]');
 	if (cmus.list.length == 0) {
 		cmus.c = null;
 		cmus.ch.leave();
@@ -779,6 +801,7 @@ function musicPlay(cmus) {
 	
 	cmus.curr = cmus.list[0];
 	cmus.list.shift();
+	console.log('> "' + cmus.curr.url + '".');
 	const stream = ytdl(cmus.curr.url, {filter: 'audioonly'});
 	//const dispatcher = c.playStream(stream, streamOptions);
 	
@@ -788,6 +811,9 @@ function musicPlay(cmus) {
 
 	mp3decoder.on('format', pcmfmt => {
 		// note: discordie encoder does resampling if rate != 48000
+		
+		console.log('[format]');
+		
 		var options = {
 			frameDuration: 60,
 			sampleRate: pcmfmt.sampleRate,
@@ -816,6 +842,7 @@ function musicPlay(cmus) {
 		});
 		
 		mp3decoder.once('end', () => {
+			console.log('[ended]');
 			musicPlay(cmus);
 		});
 
