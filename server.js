@@ -1,8 +1,9 @@
 // Дискорд-бот "Крипушка"
 
-const ytdl = require('ytdl-core');
 const Discord = require('discord.js');
 const client = new Discord.Client();
+
+let myToken = 'MzExMTYzODU5NTgwNzQ3Nzc4.C_Ijtg.32OP4QU9LYx2MKiJUhYy0RIZPmE';
 
 // инициализация
 let myId = '311163859580747778';
@@ -100,137 +101,6 @@ function capReply(message, text, flags) {
 		case 'dm': // force private conversation
 		return message.author.send(text);
 	}
-}
-
-// данные о музыкальных каналах
-let mus = {
-	maxList: 10,
-	'175951720990507008': {
-		channel: '315439572710326284',
-		accept: '315445827772481537',
-		left: 20 * 60,
-		c: null,
-		ch: null,
-		ac: null,
-		curr: null,
-		list: [],
-	},
-};
-
-function musicProcess(message) {
-	let uc = message.content.trim();
-	let m;
-	
-	setTimeout(function() {
-		message.delete();
-	}, 1500);
-	
-	// play music
-	m = uc.match(/https?:\/\/[0-9a-zA-Z.\/?=%#_+-]+/);
-	if (m) {
-		musicPut(m[0], message);
-		return;
-	}
-	
-	// skip
-	if (uc.match(/(skip|скип|пропусти)/)) {
-		//...
-		return;
-	}
-}
-
-function musicPut(url, message) {
-	let cmus = mus[message.guild.id];
-	
-	function ret(result) {
-		message.author.send(result);
-		return false;
-	}
-
-	if (url.length > 120 || url.length < 10) {
-		return ret('Какая-то длина ссылки не такая.');
-	}
-	
-	let ch = message.guild.channels.get(cmus.channel);
-	if (!ch.joinable) {
-		return ret('Что-то канал закрытый.');
-	}
-	if (!ch.speakable) {
-		return ret('Что-то канал неразговорный.');
-	}
-	if (ch.full) {
-		return ret('Канал забит, не могу залезть.');
-	}
-	if (!ch.members.has(message.author.id)) {
-		return ret('Эй, сначала зайди в голосовой канал `' + ch.name + '`, для кого я играть-то буду?');
-	}
-	
-	cmus.ch = ch;
-	cmus.ac = message.guild.channels.get(cmus.accept);
-	
-	if (cmus.list.length >= mus.maxList) {
-		ret('Довольно добавлять, пусть сначала текущее доиграет.');
-	} else {
-		
-		cmus.list.push({
-			message: message,
-			user: message.author,
-			url: url,
-		});
-		
-		// edit status message here
-		
-	}
-	
-	if (!cmus.c) {
-		cmus.c = 'pending';
-		ch.join().then(c => {
-			cmus.c = c;
-			try {
-				musicPlay(cmus);
-			} catch(e) {
-				ret('Упс, что-то не получилось поставить.');
-				console.error(e);
-			}
-		}).catch(e => {
-			ret('Ой, я споткнулся об порог, когда заходил в канал.');
-			console.log('Failed to join voice channel.');
-			console.error(e);
-			cmus.c = null;
-		});
-	}
-	
-	return true;
-	
-	//return 'добавлено в очередь (' + cmus.list.length + '/' + mus.maxList + ').';
-}
-
-function musicPlay(cmus) {
-	if (cmus.list.length == 0) {
-		cmus.c = null;
-		cmus.ch.leave();
-	}
-	
-	cmus.curr = cmus.list[0];
-	cmus.list.shift();
-	const stream = ytdl(cmus.curr, {filter: 'audioonly'});
-	const dispatcher = c.playStream(stream, streamOptions);
-	
-	dispatcher.on('start', () => {
-		cmus.curr.author.send('Играет твоя музыка: ' + cmus.curr.url + ' (потом сделаю, чтобы это не писалось).');
-	});
-	
-	dispatcher.on('end', reason => {
-		musicPlay(cmus);
-	});
-	
-	dispatcher.on('error', e => {
-		console.log('Music playing error!');
-		console.error(e);
-		cmus.curr.author.send('Не получилось проиграть `' + cmus.curr.url + '`.\nЕсли что, работают только ссылки на видео с YouTube.');
-		
-		musicPlay(cmus);
-	});
 }
 
 // чем отвечать будем
@@ -723,8 +593,9 @@ client.on('message', message => {
 			return;
 		}
 		
-		if (message.guild && mus[message.guild.id] && mus[message.guild.id].accept == message.channel.id) {
-			musicProcess(message);
+		if (typeof mus != 'undefined' && message.guild && mus[message.guild.id] && mus[message.guild.id].accept == message.channel.id) {
+			// ignore messages in channel for music control,
+			// this work is for Discordie.
 			return;
 		}
 		
@@ -746,4 +617,221 @@ client.on('ready', () => {
 });
 
 
-client.login('MzExMTYzODU5NTgwNzQ3Nzc4.C_Ijtg.32OP4QU9LYx2MKiJUhYy0RIZPmE');
+client.login(myToken);
+
+
+
+
+
+// Модуль для проигрывания музыки
+// discord.js не смог в FFMPEG, так что музыка через Discordie.
+
+const Discordie = require('discordie');
+const ytdl = require('ytdl-core');
+const lame = require('lame');
+
+
+var clientMusic = new Discordie({autoReconnect: true});
+
+var auth = {token: myToken};
+
+clientMusic.connect(auth);
+
+clientMusic.Dispatcher.on("GATEWAY_READY", e => {
+	console.log('Discordie is ready!');
+});
+
+clientMusic.Dispatcher.on("MESSAGE_CREATE", (e) => {
+	const message = e.message;
+	const content = message.content;
+	const channel = message.channel;
+	const guild = channel.guild;
+	
+	if (!guild) {
+		return;
+	}
+	
+	try {
+		// бот должен игнорить себя
+		if (ignores.indexOf(message.author.id) !== -1) {
+			return;
+		}
+		
+		if (!mus[guild.id] || mus[guild.id].accept != channel.id) {
+			return;
+		}
+		
+		// обработка сообщения
+		musicProcess(message);
+		
+	} catch(e) {
+		console.log('Discordie Error!');
+		console.error(e);
+	}
+});
+
+// данные о музыкальных каналах
+let mus = {
+	maxList: 10,
+	'175951720990507008': {
+		channel: '315439572710326284',
+		accept: '315445827772481537',
+		left: 20 * 60,
+		c: null,
+		ch: null,
+		ac: null,
+		curr: null,
+		list: [],
+	},
+};
+
+function musicProcess(message) {
+	let uc = message.content.trim();
+	let m;
+	
+	setTimeout(function() {
+		message.delete();
+	}, 1500);
+	
+	// play music
+	m = uc.match(/https?:\/\/[0-9a-zA-Z.\/?=%#_+-]+/);
+	if (m) {
+		musicPut(m[0], message);
+		return;
+	}
+	
+	// skip
+	if (uc.match(/(skip|скип|пропусти)/)) {
+		//...
+		return;
+	}
+}
+
+function musicPut(url, message) {
+	let cmus = mus[message.guild.id];
+	
+	function ret(result) {
+		message.author.openDM().then(dm => {
+			sendMessage(result);
+		});
+		return false;
+	}
+
+	if (url.length > 120 || url.length < 10) {
+		return ret('Какая-то длина ссылки не такая.');
+	}
+	
+	let ch = message.guild.voiceChannels.find(c => c.id == cmus.channel);
+	if (!ch.members.find(c => c.id == message.author.id)) {
+		return ret('Эй, сначала зайди в голосовой канал `' + ch.name + '`, для кого я играть-то буду?');
+	}
+	
+	cmus.ch = ch;
+	cmus.ac = message.guild.textChannels.find(c => c.id == cmus.accept);
+	
+	if (cmus.list.length >= mus.maxList) {
+		ret('Довольно добавлять, пусть сначала текущее доиграет.');
+	} else {
+		
+		cmus.list.push({
+			message: message,
+			user: message.author,
+			url: url,
+			skips: [],
+		});
+		
+		
+		updateMessage(cmus);
+		// edit status message here
+		
+	}
+	
+	if (!cmus.c) {
+		cmus.c = 'pending';
+
+		ch.join(false, false).then(c => {
+			cmus.c = c.voiceConnection;
+			try {
+				musicPlay(cmus);
+			} catch(e) {
+				ret('Упс, что-то не получилось поставить.');
+				console.error(e);
+			}
+		}).catch(e => {
+			ret('Ой, я споткнулся о ступеньку, когда заходил в канал.');
+			console.log('Failed to join voice channel.');
+			console.error(e);
+			cmus.c = null;
+		});
+	}
+	
+	return true;
+	
+	//return 'добавлено в очередь (' + cmus.list.length + '/' + mus.maxList + ').';
+}
+
+function musicPlay(cmus) {
+	if (cmus.list.length == 0) {
+		cmus.c = null;
+		cmus.ch.leave();
+	}
+	
+	cmus.curr = cmus.list[0];
+	cmus.list.shift();
+	const stream = ytdl(cmus.curr, {filter: 'audioonly'});
+	//const dispatcher = c.playStream(stream, streamOptions);
+	
+	var mp3decoder = new lame.Decoder();
+	//var file = fs.createReadStream("test.mp3");
+	stream.pipe(mp3decoder);
+
+	mp3decoder.on('format', pcmfmt => {
+		// note: discordie encoder does resampling if rate != 48000
+		var options = {
+			frameDuration: 60,
+			sampleRate: pcmfmt.sampleRate,
+			channels: pcmfmt.channels,
+			float: false
+		};
+		
+		var encoderStream = cmus.c.getEncoderStream(options);
+		if (!encoderStream) {
+			return console.log('Unable to get encoder stream, connection is disposed');
+		}
+		
+		// Stream instance is persistent until voice connection is disposed;
+		// you can register timestamp listener once when connection is initialized
+		// or access timestamp with `encoderStream.timestamp`
+		encoderStream.resetTimestamp();
+		encoderStream.removeAllListeners("timestamp");
+		encoderStream.on("timestamp", time => console.log("Time " + time));
+
+		// only 1 stream at a time can be piped into AudioEncoderStream
+		// previous stream will automatically unpipe
+		mp3decoder.pipe(encoderStream);
+		
+		mp3decoder.once('start', () => {
+			console.log('Playing: "' + cmus.curr.url + '".');
+		});
+		
+		mp3decoder.once('end', () => {
+			musicPlay(cmus);
+		});
+
+		mp3decoder.once('error', e => {
+			console.log('Music playing error!');
+			console.error(e);
+			console.log('Failed: "' + cmus.curr.url + '".');
+			
+			musicPlay(cmus);
+		});
+		// must be registered after `pipe()`
+		//encoderStream.once("unpipe", () => file.destroy());
+	});
+}
+
+function musicUpdate(cmus) {
+	
+	//...
+}
+
