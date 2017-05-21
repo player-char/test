@@ -821,7 +821,7 @@ function musicPlay(cmus) {
 	
 	var options = {
 		frameDuration: 60,
-		sampleRate: 48000,
+		sampleRate: 11025,
 		channels: 2,
 		float: false
 	};
@@ -864,7 +864,7 @@ function musicPlay(cmus) {
 
 function musicUpdate(cmus) {
 	
-	let ctext = 'Текущая музыка: ' + cmus.curr ? '<пусто>' : cmus.curr.url + '\n';
+	let ctext = 'Текущая музыка: ' + (cmus.curr ? '<пусто>' : cmus.curr.url) + '\n';
 	
 	cmus.users = cmus.ch.members.length;
 	
@@ -907,11 +907,6 @@ function musicUpdate(cmus) {
 				return cmus.stat = message;
 			});
 		});
-	}
-	if (cmus.stat) {
-		cmus.stat.edit(ctext);
-	} else {
-		cmus.ac.sendMessage(ctext);
 	}
 	
 }
