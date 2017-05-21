@@ -678,11 +678,14 @@ let mus = {
 		channel: '315439572710326284',
 		accept: '315445827772481537',
 		left: 20 * 60,
+		list: [],
+		skip: [],
+		users: 0,
 		c: null,
 		ch: null,
 		ac: null,
 		curr: null,
-		list: [],
+		stat: null,
 	},
 };
 
@@ -759,13 +762,9 @@ function musicPut(url, message) {
 			message: message,
 			user: message.author,
 			url: url,
-			skips: [],
 		});
 		
-		
 		musicUpdate(cmus);
-		// edit status message here
-		
 	}
 	
 	if (!cmus.c) {
@@ -797,6 +796,8 @@ function musicPlay(cmus) {
 	if (cmus.list.length == 0) {
 		cmus.c = null;
 		cmus.ch.leave();
+		musicUpdate(cmus);
+		return;
 	}
 	
 	cmus.curr = cmus.list[0];
@@ -808,58 +809,105 @@ function musicPlay(cmus) {
 	var mp3decoder = new lame.Decoder();
 	//var file = fs.createReadStream("test.mp3");
 	stream.pipe(mp3decoder);
+	
+	musicUpdate(cmus);
+	
+	// note: discordie encoder does resampling if rate != 48000
+	
+	console.log('[format]');
+	
+	var options = {
+		frameDuration: 60,
+		sampleRate: 48000,
+		channels: 2,
+		float: false
+	};
+	
+	var encoderStream = cmus.c.getEncoderStream(options);
+	if (!encoderStream) {
+		return console.log('Unable to get encoder stream, connection is disposed');
+	}
+	
+	// Stream instance is persistent until voice connection is disposed;
+	// you can register timestamp listener once when connection is initialized
+	// or access timestamp with `encoderStream.timestamp`
+	encoderStream.resetTimestamp();
+	encoderStream.removeAllListeners("timestamp");
+	encoderStream.on("timestamp", time => console.log("Time " + time));
 
-	mp3decoder.on('format', pcmfmt => {
-		// note: discordie encoder does resampling if rate != 48000
-		
-		console.log('[format]');
-		
-		var options = {
-			frameDuration: 60,
-			sampleRate: pcmfmt.sampleRate,
-			channels: pcmfmt.channels,
-			float: false
-		};
-		
-		var encoderStream = cmus.c.getEncoderStream(options);
-		if (!encoderStream) {
-			return console.log('Unable to get encoder stream, connection is disposed');
-		}
-		
-		// Stream instance is persistent until voice connection is disposed;
-		// you can register timestamp listener once when connection is initialized
-		// or access timestamp with `encoderStream.timestamp`
-		encoderStream.resetTimestamp();
-		encoderStream.removeAllListeners("timestamp");
-		encoderStream.on("timestamp", time => console.log("Time " + time));
-
-		// only 1 stream at a time can be piped into AudioEncoderStream
-		// previous stream will automatically unpipe
-		mp3decoder.pipe(encoderStream);
-		
-		mp3decoder.once('start', () => {
-			console.log('Playing: "' + cmus.curr.url + '".');
-		});
-		
-		mp3decoder.once('end', () => {
-			console.log('[ended]');
-			musicPlay(cmus);
-		});
-
-		mp3decoder.once('error', e => {
-			console.log('Music playing error!');
-			console.error(e);
-			console.log('Failed: "' + cmus.curr.url + '".');
-			
-			musicPlay(cmus);
-		});
-		// must be registered after `pipe()`
-		//encoderStream.once("unpipe", () => file.destroy());
+	// only 1 stream at a time can be piped into AudioEncoderStream
+	// previous stream will automatically unpipe
+	mp3decoder.pipe(encoderStream);
+	
+	mp3decoder.once('start', () => {
+		console.log('Playing: "' + cmus.curr.url + '".');
 	});
+	
+	mp3decoder.once('end', () => {
+		console.log('[ended]');
+		musicPlay(cmus);
+	});
+
+	mp3decoder.once('error', e => {
+		console.log('Music playing error!');
+		console.error(e);
+		console.log('Failed: "' + cmus.curr.url + '".');
+		
+		musicPlay(cmus);
+	});
+	// must be registered after `pipe()`
+	//encoderStream.once("unpipe", () => file.destroy());
 }
 
 function musicUpdate(cmus) {
 	
-	//...
+	let ctext = 'Текущая музыка: ' + cmus.cur ? '<пусто>' : cmus.curr.url + '\n';
+	
+	if (cmus.skip.length) {
+		ctext += 'За пропуск проголосовали: ' + cmus.skip.length + ' из ' + Math.floor(cmus.users / 2) + '.\n'
+	}
+	
+	ctext += '\n';
+	
+	ctext += 'Очередь:';
+	if (cmus.list.length) {
+		for (let i = 0; i < cmus.list; i++) {
+			ctext += '\n' + (i + 1) + ') ' + cmus.list[i].url;
+		}
+	} else {
+		ctext += ' <пусто>';
+	}
+	
+	ctext = '```\n' + ctext + '\n```';
+	
+	if (cmus.stat && cmus.stat.then) {
+		cmus.stat.then(message => {
+			return cmus.stat.edit(ctext);
+		});
+		return;
+	}
+	
+	if (cmus.stat) {
+		return cmus.stat.edit(ctext);
+	} else {
+		cmus.accept.fetchMessages(15).then(obj => {
+			let arr = obj.messages;
+			for (let i = arr.length - 1; i >= 0; i--) {
+				if (arr[i].author.id == myId) {
+					cmus.stat = arr[i];
+					return cmus.stat.edit(ctext);
+				}
+			}
+			return cmus.stat = cmus.accept.sendMessage(ctext).then(message => {
+				return cmus.stat = message;
+			});
+		});
+	}
+	if (cmus.stat) {
+		cmus.stat.edit(ctext);
+	} else {
+		cmus.accept.sendMessage(ctext);
+	}
+	
 }
 
