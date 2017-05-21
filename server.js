@@ -638,7 +638,7 @@ var auth = {token: myToken};
 clientMusic.connect(auth);
 
 clientMusic.Dispatcher.on("GATEWAY_READY", e => {
-	clientMusic.user.setStatus('invisible');
+	clientMusic.User.setStatus('invisible');
 	console.log('Discordie is ready!');
 });
 
