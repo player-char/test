@@ -6,8 +6,8 @@
   },
   "dependencies": {
     "ffmpeg-binaries": "3.2.2",
-    "discord.js": "11.1.0",
     "node-opus": "^0.2.5",
+    "discord.js": "11.1.0",
     "ytdl-core": "^0.14.0"
   },
   "engines": {
