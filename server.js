@@ -820,8 +820,7 @@ function musicPlay(cmus) {
 	const stream = ytdl(cmus.curr.url, {filter: 'audioonly'});
 	//const dispatcher = c.playStream(stream, streamOptions);
 	
-	var mp3decoder = new lame.Decoder();
-	stream.pipe(mp3decoder).on('format', console.log);
+	//var mp3decoder = new lame.Decoder();
 	
 	cmus.skip = [];
 	
@@ -829,18 +828,12 @@ function musicPlay(cmus) {
 	
 	// note: discordie encoder does resampling if rate != 48000
 	
-	
-	var options = {
-		frameDuration: 60,
-		sampleRate: 11025,
-		channels: 2,
-		float: false
-	};
-	
 	var encoderStream = cmus.c.getEncoderStream(options);
 	if (!encoderStream) {
 		return console.log('Unable to get encoder stream, connection is disposed');
 	}
+	
+	//stream.pipe(encoderStream);
 	
 	// Stream instance is persistent until voice connection is disposed;
 	// you can register timestamp listener once when connection is initialized
@@ -851,18 +844,18 @@ function musicPlay(cmus) {
 
 	// only 1 stream at a time can be piped into AudioEncoderStream
 	// previous stream will automatically unpipe
-	mp3decoder.pipe(encoderStream);
+	stream.pipe(encoderStream);
 	
-	mp3decoder.once('start', () => {
+	stream.once('start', () => {
 		console.log('Playing: "' + cmus.curr.url + '".');
 	});
 	
-	mp3decoder.once('end', () => {
+	stream.once('end', () => {
 		console.log('[ended]');
 		musicPlay(cmus);
 	});
 
-	mp3decoder.once('error', e => {
+	stream.once('error', e => {
 		console.log('Music playing error!');
 		console.error(e);
 		console.log('Failed: "' + cmus.curr.url + '".');
