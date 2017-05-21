@@ -117,7 +117,7 @@ let mus = {
 	},
 };
 
-function musicProcess() {
+function musicProcess(message) {
 	let uc = message.content.trim();
 	let m;
 	
@@ -715,19 +715,26 @@ client.on('message', message => {
 		return;
 	}
 	
-	// бот должен игнорить себя
-	if (ignores.indexOf(message.author.id) !== -1) {
-		return;
+	try {
+		// бот должен игнорить себя
+		if (ignores.indexOf(message.author.id) !== -1) {
+			return;
+		}
+		
+		if (message.guild && mus[message.guild.id] && mus[message.guild.id].accept == message.channel.id) {
+			musicProcess(message);
+			return;
+		}
+		
+		// delay is necessary for correct message ordering
+		// because sometimes bot is too fast
+		setTimeout(processMessage, 80, message);
+		
+	} catch(e) {
+		console.error(e);
+		//wrecked = true;
+		//message.reply(e.name + ': ' + e.message);
 	}
-	
-	if (message.guild && mus[message.guild.id] && mus[message.guild.id].accept == message.channel.id) {
-		musicProcess(message);
-		return;
-	}
-	
-	// delay is necessary for correct message ordering
-	// because sometimes bot is too fast
-	setTimeout(processMessage, 80, message);
 });
 
 // сразу, как зайдёт
