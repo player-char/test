@@ -689,13 +689,15 @@ let mus = {
 	},
 };
 
-function musicProcess(message) {
-	let uc = message.content.trim();
-	let m;
-	
+function autoRemove(message) {
 	setTimeout(function() {
 		message.delete();
 	}, 1500);
+}
+
+function musicProcess(message) {
+	let uc = message.content.trim();
+	let m;
 	
 	// play music
 	m = uc.match(/https?:\/\/[0-9a-zA-Z.\/?=%#_+-]+/);
@@ -736,10 +738,15 @@ function musicPut(url, message) {
 	let cmus = mus[message.guild.id];
 	
 	function ret(result) {
-		message.author.openDM().then(dm => {
-			dm.sendMessage(result);
-		});
-		return false;
+		//message.author.openDM().then(dm => {
+		//	dm.sendMessage(result);
+		//});
+		
+		setTimeout(() => {
+			cmus.ac.sendMessage(result).then(message => {
+				autoRemove(message);
+			});
+		}, 250);
 	}
 	
 	if (url.length > 120 || url.length < 10) {
@@ -778,8 +785,9 @@ function musicPut(url, message) {
 			try {
 				musicPlay(cmus);
 			} catch(e) {
-				ret('Упс, что-то не получилось поставить.');
 				console.error(e);
+				ret('Упс, не получилось поставить.');
+				musicPlay(cmus);
 			}
 		}).catch(e => {
 			ret('Ой, я споткнулся о ступеньку, когда заходил в канал.');
@@ -789,7 +797,7 @@ function musicPut(url, message) {
 		});
 	}
 	
-	return true;
+	//return true;
 	
 	//return 'добавлено в очередь (' + cmus.list.length + '/' + mus.maxList + ').';
 }
@@ -810,7 +818,6 @@ function musicPlay(cmus) {
 	//const dispatcher = c.playStream(stream, streamOptions);
 	
 	var mp3decoder = new lame.Decoder();
-	//var file = fs.createReadStream("test.mp3");
 	stream.pipe(mp3decoder);
 	
 	musicUpdate(cmus);
@@ -882,6 +889,8 @@ function musicUpdate(cmus) {
 	} else {
 		ctext += ' <пусто>';
 	}
+	
+	ctext += 'Киньте ссылку в чат для добавления в очередь.';
 	
 	ctext = '```\n' + ctext + '\n```';
 	
