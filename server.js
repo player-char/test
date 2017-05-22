@@ -3,7 +3,7 @@
 const Discord = require('discord.js');
 const client = new Discord.Client();
 
-let myToken = 'MzExMTYzODU5NTgwNzQ3Nzc4.C_Ijtg.32OP4QU9LYx2MKiJUhYy0RIZPmE';
+let myToken = process.env.BOT_TOKEN;
 
 // инициализация
 let myId = '311163859580747778';
@@ -627,7 +627,7 @@ client.login(myToken);
 // discord.js не смог в FFMPEG, так что музыка через Discordie.
 
 const Discordie = require('discordie');
-const ytdl = require('ytdl-core');
+const http = require('http');
 const lame = require('lame');
 
 
@@ -695,6 +695,18 @@ function autoRemove(message) {
 	}, 2000);
 }
 
+function ret(cmus, result) {
+	//message.author.openDM().then(dm => {
+	//	dm.sendMessage(result);
+	//});
+	
+	setTimeout(() => {
+		cmus.ac.sendMessage(result).then(message => {
+			autoRemove(message);
+		});
+	}, 250);
+}
+
 function musicProcess(message) {
 	let uc = message.content.trim();
 	let m;
@@ -739,20 +751,9 @@ function musicProcess(message) {
 function musicPut(url, message) {
 	let cmus = mus[message.guild.id];
 	
-	function ret(result) {
-		//message.author.openDM().then(dm => {
-		//	dm.sendMessage(result);
-		//});
-		
-		setTimeout(() => {
-			cmus.ac.sendMessage(result).then(message => {
-				autoRemove(message);
-			});
-		}, 250);
-	}
 	
 	if (url.length > 120 || url.length < 10) {
-		return ret('Какая-то длина ссылки не такая.');
+		return ret(cmus, 'Какая-то длина ссылки не такая.');
 	}
 	
 	let ch = message.guild.voiceChannels.find(c => c.id == cmus.channel);
@@ -762,12 +763,12 @@ function musicPut(url, message) {
 	cmus.ac = message.guild.textChannels.find(c => c.id == cmus.accept);
 	
 	if (!ch.members.find(c => c.id == message.author.id)) {
-		return ret('Эй, сначала зайди в голосовой канал `' + ch.name + '`, для кого я играть-то буду?');
+		return ret(cmus, 'Эй, сначала зайди в голосовой канал `' + ch.name + '`, для кого я играть-то буду?');
 	}
 	
 	
 	if (cmus.list.length >= mus.maxList) {
-		ret('Довольно добавлять, пусть сначала текущее доиграет.');
+		ret(cmus, 'Довольно добавлять, пусть сначала текущее доиграет.');
 	} else {
 		
 		cmus.list.push({
@@ -788,11 +789,11 @@ function musicPut(url, message) {
 				musicPlay(cmus);
 			} catch(e) {
 				console.error(e);
-				ret('Упс, не получилось поставить.');
+				ret(cmus, 'Упс, не получилось поставить.');
 				musicPlay(cmus);
 			}
 		}).catch(e => {
-			ret('Ой, я споткнулся о ступеньку, когда заходил в канал.');
+			ret(cmus, 'Ой, я споткнулся о ступеньку, когда заходил в канал.');
 			console.log('Failed to join voice channel.');
 			console.error(e);
 			cmus.c = null;
@@ -811,59 +812,81 @@ function musicPlay(cmus) {
 		cmus.curr = null;
 		cmus.ch.leave();
 		musicUpdate(cmus);
+		ret(cmus, 'Музыка закончилась, выхожу из канала.');
 		return;
 	}
 	
 	cmus.curr = cmus.list[0];
 	cmus.list.shift();
 	console.log('> "' + cmus.curr.url + '".');
-	const stream = ytdl(cmus.curr.url, {filter: 'audioonly'});
+	//const stream = ytdl(cmus.curr.url, {filter: 'audioonly'});
+	http.get(cmus.curr.url, response => {
+		musicConnect(cmus, response);
+	});
+}
+
+function musicConnect(cmus, stream) {
 	//const dispatcher = c.playStream(stream, streamOptions);
-	
-	//var mp3decoder = new lame.Decoder();
-	
-	cmus.skip = [];
-	
-	musicUpdate(cmus);
-	
-	// note: discordie encoder does resampling if rate != 48000
-	
-	var encoderStream = cmus.c.getEncoderStream();
-	if (!encoderStream) {
-		return console.log('Unable to get encoder stream, connection is disposed');
-	}
-	
-	//stream.pipe(encoderStream);
-	
-	// Stream instance is persistent until voice connection is disposed;
-	// you can register timestamp listener once when connection is initialized
-	// or access timestamp with `encoderStream.timestamp`
-	encoderStream.resetTimestamp();
-	encoderStream.removeAllListeners("timestamp");
-	encoderStream.on("timestamp", time => console.log("Time " + time));
-
-	// only 1 stream at a time can be piped into AudioEncoderStream
-	// previous stream will automatically unpipe
-	stream.pipe(encoderStream);
-	
-	stream.once('start', () => {
-		console.log('Playing: "' + cmus.curr.url + '".');
-	});
-	
-	stream.once('end', () => {
-		console.log('[ended]');
-		musicPlay(cmus);
-	});
-
-	stream.once('error', e => {
-		console.log('Music playing error!');
-		console.error(e);
-		console.log('Failed: "' + cmus.curr.url + '".');
+	try {
+		var mp3decoder = new lame.Decoder();
+		stream.pipe(mp3decoder).on('format', console.log);
 		
-		musicPlay(cmus);
-	});
-	// must be registered after `pipe()`
-	//encoderStream.once("unpipe", () => file.destroy());
+		cmus.skip = [];
+		musicUpdate(cmus);
+		
+		// note: discordie encoder does resampling if rate != 48000
+		
+		mp3decoder.on('format', pcmfmt => {
+			
+			var options = {
+				frameDuration: 60,
+				sampleRate: pcmfmt.sampleRate,
+				channels: pcmfmt.channels,
+				float: false,
+			};
+			
+			var encoderStream = cmus.c.getEncoderStream(options);
+			if (!encoderStream) {
+				return console.log('Unable to get encoder stream, connection is disposed');
+			}
+			
+			// Stream instance is persistent until voice connection is disposed;
+			// you can register timestamp listener once when connection is initialized
+			// or access timestamp with `encoderStream.timestamp`
+			encoderStream.resetTimestamp();
+			encoderStream.removeAllListeners("timestamp");
+			encoderStream.on("timestamp", time => console.log("Time " + time));
+
+			// only 1 stream at a time can be piped into AudioEncoderStream
+			// previous stream will automatically unpipe
+			mp3decoder.pipe(encoderStream);
+			
+			mp3decoder.once('start', () => {
+				console.log('Playing: "' + cmus.curr.url + '".');
+			});
+			
+			mp3decoder.once('end', () => {
+				console.log('[ended]');
+				musicPlay(cmus);
+			});
+
+			mp3decoder.once('error', e => {
+				resp(cmus, 'Не удалось распознать данные из файла.');
+				console.log('Music playing error!');
+				console.error(e);
+				console.log('Failed: "' + cmus.curr.url + '".');
+				
+				musicPlay(cmus);
+			});
+			
+			// must be registered after `pipe()`
+			//encoderStream.once("unpipe", () => file.destroy());
+		});
+	} catch(e) {
+		console.log('Connect error.');
+		console.error(e);
+		resp(cmus, 'Не удалось скачать файл по ссылке.');
+	}
 }
 
 function musicUpdate(cmus) {
