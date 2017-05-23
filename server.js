@@ -637,6 +637,9 @@ client.login(myToken);
 try {
 	console.log(require('ffmpeg-binaries').ffmpegPath());
 } catch(e) {
+	console.log('Check Failed.');
+	console.error(e);
+	const ChildProcess = require('child_process');
 	for (const command of ['ffmpeg', 'avconv', './ffmpeg', './avconv']) {
 		let t = ChildProcess.spawnSync(command, ['-h']).error;
 		if (!t) {
@@ -645,8 +648,6 @@ try {
 			console.log(t);
 		}
     }
-	console.log('Check Failed.');
-	console.error(e);
 }
 
 
