@@ -596,6 +596,17 @@ client.on('message', message => {
 		if (typeof mus != 'undefined' && message.guild && mus[message.guild.id] && mus[message.guild.id].accept == message.channel.id) {
 			// ignore messages in channel for music control,
 			// this work is for Discordie.
+			
+			if (message.content == 'join') {
+				let ch = message.guild.channels.get('315439572710326284');
+				ch.join().then(c => {
+					console.log('Joined!');
+				}).catch(e => {
+					console.log('Failed to join voice channel.');
+					console.error(e);
+				});
+			}
+			
 			return;
 		}
 		
