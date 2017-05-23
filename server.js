@@ -632,6 +632,23 @@ client.login(myToken);
 
 
 
+// test
+
+try {
+	console.log(require('ffmpeg-binaries').ffmpegPath());
+} catch(e) {
+	for (const command of ['ffmpeg', 'avconv', './ffmpeg', './avconv']) {
+		let t = ChildProcess.spawnSync(command, ['-h']).error;
+		if (!t) {
+			console.log(command);
+		} else {
+			console.log(t);
+		}
+    }
+	console.log('Check Failed.');
+	console.error(e);
+}
+
 
 
 // Модуль для проигрывания музыки
