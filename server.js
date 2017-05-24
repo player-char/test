@@ -661,6 +661,7 @@ function encodeSearchQuery(q) {
 }
 
 function musicProcess(message) {
+	let cmus = mus[message.guild.id];
 	let uc = message.content.trim();
 	let m;
 	
@@ -693,7 +694,6 @@ function musicProcess(message) {
 	
 	// stop
 	if (uc == 'halt!') {
-		let cmus = mus[message.guild.id];
 		musicStop(cmus);
 		return;
 	}
