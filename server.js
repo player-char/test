@@ -590,7 +590,7 @@ client.on('message', message => {
 	
 	try {
 		
-		if (typeof mus != 'undefined' && message.guild && mus[message.guild.id] && mus[message.guild.id].accept == message.channel.id) {
+		if (typeof mus != 'undefined' && message.guild && mus[message.guild.id] && mus[message.guild.id].tch == message.channel.id) {
 			musicProcess(message);
 			
 			return;
@@ -624,15 +624,15 @@ client.login(myToken);
 let mus = {
 	maxList: 10,
 	'175951720990507008': {
-		channel: '315439572710326284',
-		accept: '315445827772481537',
+		vid: '315439572710326284', // voice channel id
+		tid: '315445827772481537', // text channel id
+		vch: null, // voice channel object
+		tch: null, // text channel object
 		left: 20 * 60,
 		list: [],
 		skip: [],
 		users: 0,
 		c: null,
-		ch: null,
-		ac: null,
 		curr: null,
 		stat: null,
 	},
@@ -650,10 +650,10 @@ function autoRemove(message) {
 // ответ на запрос
 function ret(cmus, result) {
 	setTimeout(() => {
-		cmus.ac.send(result).then(message => {
+		cmus.tch.send(result).then(message => {
 			autoRemove(message);
 		});
-	}, 250);
+	}, 150);
 }
 
 function encodeSearchQuery(q) {
@@ -663,6 +663,9 @@ function encodeSearchQuery(q) {
 function musicProcess(message) {
 	let uc = message.content.trim();
 	let m;
+	
+	cmus.vch = message.guild.channels.get(cmus.cid);
+	cmus.tch = message.guild.channels.get(cmus.tid);
 	
 	autoRemove(message);
 	
@@ -676,7 +679,7 @@ function musicProcess(message) {
 	
 	// skip
 	if (uc == '-') {
-		ret('Скип пока что ещё не готов, потом доделаю.');
+		ret(cmus, 'Скип пока что ещё не готов, потом доделаю.');
 		return;
 	}
 	
@@ -705,14 +708,10 @@ function musicPut(message, q, search) {
 		return;
 	}
 	
-	let ch = message.guild.channels.get(cmus.channel);
+	cmus.users = cmus.vch.members.length;
 	
-	cmus.ch = ch;
-	cmus.users = ch.members.length;
-	cmus.ac = message.guild.channels.get(cmus.accept);
-	
-	if (!ch.members.find(c => c.id == message.author.id)) {
-		return ret(cmus, 'Эй, сначала зайди в голосовой канал `' + ch.name + '`, для кого я играть-то буду?');
+	if (!cmus.vch.members.find(c => c.id == message.author.id)) {
+		return ret(cmus, 'Эй, сначала зайди в голосовой канал `' + cmus.vch.name + '`, для кого я играть-то буду?');
 	}
 	
 	
@@ -777,7 +776,7 @@ function musicRejoin(cmus) {
 	if (!cmus.c) {
 		cmus.c = 'pending';
 
-		ch.join().then(c => {
+		cmus.vch.join().then(c => {
 			cmus.c = c;
 			try {
 				musicPlay(cmus);
@@ -808,16 +807,15 @@ function musicPush(cmus, url, user, title, author) {
 }
 
 function musicPlay(cmus) {
-	console.log('[playing]');
 	if (cmus.list.length == 0) {
 		musicUpdate(cmus);
 		ret(cmus, 'Музыка закончилась, выхожу из канала.');
 		return;
 	}
 	
-	cmus.curr = cmus.list[0];
-	cmus.list.shift();
-	console.log('> "' + cmus.curr.url + '".');
+	cmus.curr = cmus.list.shift();
+	console.log('> [https://youtu.be/' + cmus.curr.url + ']');
+	
 	const stream = ytdl(cmus.curr.url, {filter: 'audioonly'});
 	musicConnect(cmus, stream);
 }
@@ -854,7 +852,7 @@ function musicUpdate(cmus) {
 	
 	let ctext = 'Текущее: ' + (cmus.curr ? musicStr(cmus.curr) : '<пусто>') + '\n';
 	
-	cmus.users = cmus.ch.members.size;
+	cmus.users = cmus.vch.members.size;
 	
 	if (cmus.skip.length) {
 		ctext += 'За пропуск проголосовали: ' + cmus.skip.length + ' из ' + Math.floor(cmus.users / 2) + '.\n'
@@ -887,7 +885,7 @@ function musicUpdate(cmus) {
 	if (cmus.stat) {
 		return cmus.stat.edit(ctext);
 	} else {
-		cmus.ac.fetchMessages(15).then(obj => {
+		cmus.tch.fetchMessages(15).then(obj => {
 			let arr = obj.messages;
 			for (let i = arr.length - 1; i >= 0; i--) {
 				if (arr[i].author.id == myId) {
@@ -895,7 +893,7 @@ function musicUpdate(cmus) {
 					return cmus.stat.edit(ctext);
 				}
 			}
-			return cmus.stat = cmus.ac.sendMessage(ctext).then(message => {
+			return cmus.stat = cmus.tch.sendMessage(ctext).then(message => {
 				return cmus.stat = message;
 			});
 		});
@@ -908,7 +906,7 @@ function musicStop(cmus) {
 		cmus.curr = null;
 		cmus.list = [];
 		cmus.skip = [];
-		cmus.ch.leave();
+		cmus.vch.leave();
 		musicUpdate(cmus);
 	}
 }
