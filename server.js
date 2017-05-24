@@ -665,7 +665,7 @@ function musicProcess(message) {
 	let uc = message.content.trim();
 	let m;
 	
-	cmus.vch = message.guild.channels.get(cmus.cid);
+	cmus.vch = message.guild.channels.get(cmus.vid);
 	cmus.tch = message.guild.channels.get(cmus.tid);
 	
 	autoRemove(message);
