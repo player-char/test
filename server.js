@@ -783,8 +783,9 @@ function musicRejoin(cmus) {
 			try {
 				musicPlay(cmus);
 			} catch(e) {
-				console.error(e);
 				ret(cmus, 'Упс, не получилось поставить.');
+				console.log('Failed to play the music.');
+				console.error(e);
 				musicPlay(cmus);
 			}
 		}).catch(e => {
@@ -810,7 +811,7 @@ function musicPush(cmus, url, user, title, author) {
 
 function musicPlay(cmus) {
 	if (cmus.list.length == 0) {
-		musicUpdate(cmus);
+		musicStop(cmus);
 		ret(cmus, 'Музыка закончилась, выхожу из канала.');
 		return;
 	}
@@ -818,15 +819,16 @@ function musicPlay(cmus) {
 	cmus.curr = cmus.list.shift();
 	console.log('> [https://youtu.be/' + cmus.curr.url + ']');
 	
-	const stream = ytdl(cmus.curr.url, {filter: 'audioonly'});
+	const stream = ytdl('https://www.youtube.com/watch?v=' + cmus.curr.url, {filter: 'audioonly'});
 	musicConnect(cmus, stream);
 }
 
 function musicConnect(cmus, stream) {
-	const dispatcher = cmus.c.playStream(stream, streamOptions);
+	const dispatcher = cmus.c.playStream(stream);
+	musicUpdate(cmus);
 	
 	dispatcher.on('start', () => {
-		ret(cmus, 'Играет музыка: `https://youtu.be/' + cmus.curr.url + '`');
+		ret(cmus, '<@' + cmus.curr.user + '>, играет твоя музыка: `https://youtu.be/' + cmus.curr.url + '`');
 	});
 	
 	dispatcher.on('end', reason => {
