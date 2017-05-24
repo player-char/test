@@ -590,7 +590,7 @@ client.on('message', message => {
 	
 	try {
 		
-		if (typeof mus != 'undefined' && message.guild && mus[message.guild.id] && mus[message.guild.id].tch == message.channel.id) {
+		if (typeof mus != 'undefined' && message.guild && mus[message.guild.id] && mus[message.guild.id].tid == message.channel.id) {
 			musicProcess(message);
 			
 			return;
