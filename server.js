@@ -620,6 +620,7 @@ client.login(myToken);
 // Модуль для проигрывания музыки
 
 const ytdl = require('ytdl-core');
+const http = require('http');
 
 
 // данные о музыкальных каналах
@@ -703,8 +704,25 @@ function musicProcess(message) {
 	
 	// eval
 	if (uc[0] == '#') {
-		eval(uc.slice(1));
+		ret(cmus, eval(uc.slice(1)));
 		return;
+	}
+	
+	if (uc == 'join') {
+		const voiceChannel = message.member.voiceChannel;
+		if (!voiceChannel) {
+		  return message.reply('Please be in a voice channel first!');
+		}
+		voiceChannel.join().then(connection => {
+			ret(cmus, 'Joined!');
+			let stream = ytdl('https://www.youtube.com/watch?v=dQw4w9WgXcQ', {
+				filter : 'audioonly',
+			});
+			const dispatcher = connection.playStream(stream);
+			dispatcher.on('end', () => {
+				voiceChannel.leave();
+			});
+		});
 	}
 }
 
@@ -721,6 +739,15 @@ function musicPut(message, q, search) {
 	
 	cmus.users = cmus.vch.members.length;
 	
+	if (!cmus.vch.joinable) {
+		return ret(cmus, 'Что-то канал закрытый.');
+	}
+	if (!cmus.vch.speakable) {
+		return ret(cmus, 'Что-то канал неразговорный.');
+	}
+	if (cmus.vch.full) {
+		return ret(cmus, 'Канал забит, не могу залезть.');
+	}
 	if (!cmus.vch.members.find(c => c.id == message.author.id)) {
 		return ret(cmus, 'Эй, сначала зайди в голосовой канал `' + cmus.vch.name + '`, для кого я играть-то буду?');
 	}
@@ -735,7 +762,7 @@ function musicPut(message, q, search) {
 	
 	if (search != -1) {
 		// searching
-		http.get('https://www.youtube.com/results?search_query=' + encodeSearchQuery(q), response => {
+		http.get('http://www.youtube.com/results?search_query=' + encodeSearchQuery(q), response => {
 			ret(cmus, 'Search results started...');
 			let data = '';
 			
@@ -908,16 +935,8 @@ function musicUpdate(cmus) {
 	if (cmus.stat) {
 		return cmus.stat.edit(ctext);
 	} else {
-		cmus.tch.fetchMessages(15).then(map => {
-			for (let t of map) {
-				if (t[1].author.id == myId) {
-					cmus.stat = t[1];
-					return cmus.stat.edit(ctext);
-				}
-			}
-			return cmus.stat = cmus.tch.send(ctext).then(message => {
-				return cmus.stat = message;
-			});
+		return cmus.stat = cmus.tch.send(ctext).then(message => {
+			return cmus.stat = message;
 		});
 	}
 }
