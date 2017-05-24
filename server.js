@@ -619,6 +619,8 @@ client.login(myToken);
 
 // Модуль для проигрывания музыки
 
+const ytdl = require('ytdl-core');
+
 
 // данные о музыкальных каналах
 let mus = {
