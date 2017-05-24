@@ -887,15 +887,14 @@ function musicUpdate(cmus) {
 	if (cmus.stat) {
 		return cmus.stat.edit(ctext);
 	} else {
-		cmus.tch.fetchMessages(15).then(obj => {
-			let arr = obj.messages;
-			for (let i = arr.length - 1; i >= 0; i--) {
-				if (arr[i].author.id == myId) {
-					cmus.stat = arr[i];
+		cmus.tch.fetchMessages(15).then(map => {
+			for (let t of map) {
+				if (t[1].author.id == myId) {
+					cmus.stat = t[1];
 					return cmus.stat.edit(ctext);
 				}
 			}
-			return cmus.stat = cmus.tch.sendMessage(ctext).then(message => {
+			return cmus.stat = cmus.tch.send(ctext).then(message => {
 				return cmus.stat = message;
 			});
 		});
