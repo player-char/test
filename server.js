@@ -688,7 +688,7 @@ function musicProcess(message) {
 	}
 	
 	// search
-	m = uc.match(/^(\+([0-9]{0,2})|\?) *(.*)$/);
+	m = uc.match(/^(?:\+([0-9]{0,2})|\?) +(.*)$/);
 	if (m) {
 		let pos = typeof m[1] == 'undefined' ? Math.floor(Math.random() * 25565) : +m[1];
 		musicPut(message, m[2].trim(), pos);
@@ -698,6 +698,12 @@ function musicProcess(message) {
 	// stop
 	if (uc == 'halt!') {
 		musicStop(cmus);
+		return;
+	}
+	
+	// eval
+	if (uc[0] == '#') {
+		eval(uc.slice(1));
 		return;
 	}
 }
@@ -781,12 +787,14 @@ function musicPut(message, q, search) {
 	
 }
 
+let temp = 0;
+
 function musicRejoin(cmus) {
 	if (!cmus.c) {
 		ret(cmus, 'Rejoining...');
 		cmus.c = 'pending';
-
-		cmus.vch.join().then(c => {
+		
+		(temp = cmus.vch.join()).then(c => {
 			ret(cmus, 'Rejoined.');
 			cmus.c = c;
 			try {
@@ -827,6 +835,7 @@ function musicPlay(cmus) {
 	}
 	
 	cmus.curr = cmus.list.shift();
+	ret(cmus, 'Playing link "' + cmus.curr.url + '"');
 	console.log('> [https://youtu.be/' + cmus.curr.url + ']');
 	
 	const stream = ytdl('https://www.youtube.com/watch?v=' + cmus.curr.url, {filter: 'audioonly'});
