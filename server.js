@@ -651,6 +651,7 @@ function autoRemove(message) {
 
 // ответ на запрос
 function ret(cmus, result) {
+	console.log('ret: ' + result);
 	setTimeout(() => {
 		cmus.tch.send(result).then(message => {
 			autoRemove(message);
@@ -710,6 +711,8 @@ function musicPut(message, q, search) {
 		return;
 	}
 	
+	ret(cmus, '"' + q + '", ' + search);
+	
 	cmus.users = cmus.vch.members.length;
 	
 	if (!cmus.vch.members.find(c => c.id == message.author.id)) {
@@ -722,9 +725,12 @@ function musicPut(message, q, search) {
 		return ret(cmus, 'Довольно добавлять, пусть сначала текущее доиграет.');
 	}
 	
+	ret(cmus, 'Continued...');
+	
 	if (search != -1) {
 		// searching
 		http.get('https://www.youtube.com/results?search_query=' + encodeSearchQuery(q), response => {
+			ret(cmus, 'Search results started...');
 			let data = '';
 			
 			response.on('data', part => {
@@ -732,6 +738,7 @@ function musicPut(message, q, search) {
 			});
 			
 			response.on('end', () => {
+				ret(cmus, 'Search results ended...');
 				let pos = -1;
 				if (search) {
 					let arr = [];
@@ -776,12 +783,15 @@ function musicPut(message, q, search) {
 
 function musicRejoin(cmus) {
 	if (!cmus.c) {
+		ret(cmus, 'Rejoining...');
 		cmus.c = 'pending';
 
 		cmus.vch.join().then(c => {
+			ret(cmus, 'Rejoined.');
 			cmus.c = c;
 			try {
 				musicPlay(cmus);
+				ret(cmus, 'Set to play.');
 			} catch(e) {
 				ret(cmus, 'Упс, не получилось поставить.');
 				console.log('Failed to play the music.');
