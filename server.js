@@ -620,7 +620,7 @@ client.login(myToken);
 // Модуль для проигрывания музыки
 
 const ytdl = require('ytdl-core');
-const http = require('http');
+const https = require('https');
 
 
 // данные о музыкальных каналах
@@ -652,7 +652,11 @@ function autoRemove(message) {
 
 // ответ на запрос
 function ret(cmus, result) {
-	console.log('ret: ' + result);
+	console.log('ret: ', result);
+	result = String(result);
+	if (!result) {
+		return;
+	}
 	setTimeout(() => {
 		cmus.tch.send(result).then(message => {
 			autoRemove(message);
@@ -662,6 +666,10 @@ function ret(cmus, result) {
 
 function encodeSearchQuery(q) {
 	return encodeURIComponent(q).split('%20').join('+');
+}
+
+function decodeHTML(s) {
+	return s.replace(/&#(\d{1,8});/g, function(a, b) {return String.fromCharCode(+b)});
 }
 
 function musicProcess(message) {
@@ -676,7 +684,7 @@ function musicProcess(message) {
 	
 	// play music
 	//m = uc.match(/https?:\/\/[0-9a-zA-Z.\/?=%#_+-]+/);
-	m = uc.match(/(youtu\.be|watch\?v=)\/([0-9a-zA-Z_-]+)/);
+	m = uc.match(/(youtu\.be\/|watch\?v=)([0-9a-zA-Z_-]+)/);
 	if (m) {
 		musicPut(message, m[2], -1);
 		return;
@@ -704,7 +712,11 @@ function musicProcess(message) {
 	
 	// eval
 	if (uc[0] == '#') {
-		ret(cmus, eval(uc.slice(1)));
+		try {
+			ret(cmus, String(eval(uc.slice(1))));
+		} catch(err) {
+			ret(cmus, String(err));
+		}
 		return;
 	}
 	
@@ -758,12 +770,12 @@ function musicPut(message, q, search) {
 		return ret(cmus, 'Довольно добавлять, пусть сначала текущее доиграет.');
 	}
 	
-	ret(cmus, 'Continued...');
+	console.log('Continued...');
 	
 	if (search != -1) {
 		// searching
-		http.get('http://www.youtube.com/results?search_query=' + encodeSearchQuery(q), response => {
-			ret(cmus, 'Search results started...');
+		https.get('https://www.youtube.com/results?search_query=' + encodeSearchQuery(q), response => {
+			console.log('Search results started...');
 			let data = '';
 			
 			response.on('data', part => {
@@ -771,7 +783,10 @@ function musicPut(message, q, search) {
 			});
 			
 			response.on('end', () => {
-				ret(cmus, 'Search results ended...');
+				console.log('Search results ended...');
+				if (+(response.statusCode) != 200) {
+					return ret(cmus, 'Поиск провалился. Сервера ответ: ' + response.statusCode);
+				}
 				let pos = -1;
 				if (search) {
 					let arr = [];
@@ -789,8 +804,8 @@ function musicPut(message, q, search) {
 				}
 				let piece = data.substr(pos, 9000);
 				let link = piece.match(/"([^<]*)"/)[1];
-				let title = piece.match(/yt-uix-tile-link[^>]+>([^<]*)</)[1];
-				let author = piece.match(/g-hovercard[^>]+>([^<]*)</)[1];
+				let title = decodeHTML(piece.match(/yt-uix-tile-link[^>]+>([^<]*)</)[1]);
+				let author = decodeHTML(piece.match(/g-hovercard[^>]+>([^<]*)</)[1]);
 				musicPush(cmus, link, message.author, title, author);
 			});
 			
@@ -799,7 +814,7 @@ function musicPut(message, q, search) {
 				console.error(err);
 				return ret(cmus, 'Упс, во время поиска что-то оборвалось.');
 			});
-		})
+		});
 	} else {
 		// direct video url
 		ytdl.getInfo(q, (err, info) => {
@@ -814,14 +829,12 @@ function musicPut(message, q, search) {
 	
 }
 
-let temp = 0;
-
 function musicRejoin(cmus) {
 	if (!cmus.c) {
 		ret(cmus, 'Rejoining...');
 		cmus.c = 'pending';
 		
-		(temp = cmus.vch.join()).then(c => {
+		cmus.vch.join().then(c => {
 			ret(cmus, 'Rejoined.');
 			cmus.c = c;
 			try {
@@ -912,7 +925,7 @@ function musicUpdate(cmus) {
 	
 	ctext += 'Очередь: [' + cmus.list.length + ' / ' + mus.maxList + ']';
 	if (cmus.list.length) {
-		for (let i = 0; i < cmus.list; i++) {
+		for (let i = 0; i < cmus.list.length; i++) {
 			ctext += '\n' + (i + 1) + ') ' + musicStr(cmus.list[i]);
 		}
 	} else {
