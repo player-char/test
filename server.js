@@ -621,15 +621,10 @@ client.login(myToken);
 // discord.js не смог в FFMPEG, так что музыка через Discordie.
 
 const Discordie = require('discordie');
-const http = require('http');
-const lame = require('lame');
-
 
 var clientMusic = new Discordie({autoReconnect: true});
 
-var auth = {token: myToken};
-
-clientMusic.connect(auth);
+clientMusic.connect({token: myToken});
 
 clientMusic.Dispatcher.on("GATEWAY_READY", e => {
 	clientMusic.User.setStatus('invisible');
