@@ -591,7 +591,7 @@ client.on('message', message => {
 	try {
 		
 		if (typeof mus != 'undefined' && message.guild && mus[message.guild.id] && mus[message.guild.id].tid == message.channel.id) {
-			musicProcess(message);
+			//musicProcess(message);
 			
 			return;
 		}
@@ -618,6 +618,70 @@ client.login(myToken);
 
 
 // Модуль для проигрывания музыки
+// discord.js не смог в FFMPEG, так что музыка через Discordie.
+
+const Discordie = require('discordie');
+const http = require('http');
+const lame = require('lame');
+
+
+var clientMusic = new Discordie({autoReconnect: true});
+
+var auth = {token: myToken};
+
+clientMusic.connect(auth);
+
+clientMusic.Dispatcher.on("GATEWAY_READY", e => {
+	clientMusic.User.setStatus('invisible');
+	console.log('Discordie is ready!');
+});
+
+clientMusic.Dispatcher.on("MESSAGE_CREATE", (e) => {
+	const message = e.message;
+	const content = message.content;
+	const channel = message.channel;
+	const guild = channel.guild;
+	
+	if (!guild) {
+		return;
+	}
+	
+	try {
+		// бот должен игнорить себя
+		if (ignores.indexOf(message.author.id) !== -1) {
+			return;
+		}
+		
+		if (!mus[guild.id] || mus[guild.id].accept != channel.id) {
+			return;
+		}
+		
+		// обработка сообщения
+		//musicProcess(message);
+		
+		let vch = guild.voiceChannels.find(c => c.id == mus[guild.id].vid);
+		vch.join().then((c) => {
+			console.log('Joined!!!');
+			var encoder = bot.VoiceConnections[0].voiceConnection.createExternalEncoder({
+				type: 'ffmpeg',
+				format: 'pcm',
+				source: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+			});
+			encoder.play();
+			encoder.once('end', () => {
+				console.log('Left!!!');
+				vch.leave();
+			}
+		});
+		
+	} catch(e) {
+		console.log('Discordie Error!');
+		console.error(e);
+	}
+});
+
+
+
 
 const ytdl = require('ytdl-core');
 const https = require('https');
@@ -803,7 +867,7 @@ function musicPut(message, q, search) {
 					return ret(cmus, 'Ничего не нашлось по данному запросу.');
 				}
 				let piece = data.substr(pos, 9000);
-				let link = piece.match(/"([^<]*)"/)[1];
+				let link = piece.match(/"([^"]+)"/)[1];
 				let title = decodeHTML(piece.match(/yt-uix-tile-link[^>]+>([^<]*)</)[1]);
 				let author = decodeHTML(piece.match(/g-hovercard[^>]+>([^<]*)</)[1]);
 				musicPush(cmus, link, message.author, title, author);
@@ -932,9 +996,11 @@ function musicUpdate(cmus) {
 		//ctext += ' <пусто>';
 	}
 	
-	ctext += '\n"<ссылка на видео в YouTube>" - поставить музыку.';
-	ctext += '\n"+ <поисковой запрос>" - искать музыку в YouTube.';
-	ctext += '\n"-" - проголосовать за пропуск текущего трека.';
+	ctext += '\n\nКоманды простые и понятные:';
+	ctext += '\n"<ссылка на видео в YouTube>" - поставить музыку из видео.';
+	ctext += '\n"+ <название>" - ищет в YouTube, выбирает первое найденное.';
+	ctext += '\n"? <название>" - ищет в YouTube, рандомно с 1 страницы поиска.';
+	ctext += '\n"-" - проголосовать за пропуск того, что сейчас играет.';
 	
 	ctext = '```\n' + ctext + '\n```';
 	
