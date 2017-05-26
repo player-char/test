@@ -671,7 +671,7 @@ clientMusic.Dispatcher.on("MESSAGE_CREATE", (e) => {
 			encoder.once('end', () => {
 				console.log('Left!!!');
 				vch.leave();
-			}
+			});
 		});
 		
 	} catch(e) {
