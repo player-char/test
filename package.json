@@ -8,7 +8,8 @@
   "dependencies": {
     "tar": "^2.2.1",
     "ytdl-core": "0.14.1",
-    "discord.js": "hydrabolt/discord.js",
+    "discord.js": "11.1.0",
+    "discordie": "0.11.0",
     "node-opus": "^0.2.5"
   },
   "engines": {
