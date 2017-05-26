@@ -647,13 +647,14 @@ clientMusic.Dispatcher.on("MESSAGE_CREATE", (e) => {
 			return;
 		}
 		
-		if (!mus[guild.id] || mus[guild.id].accept != channel.id) {
+		if (!mus[guild.id] || mus[guild.id].tid != channel.id) {
 			return;
 		}
 		
 		// обработка сообщения
 		//musicProcess(message);
 		
+		console.log('Started!!!');
 		let vch = guild.voiceChannels.find(c => c.id == mus[guild.id].vid);
 		vch.join().then((c) => {
 			console.log('Joined!!!');
