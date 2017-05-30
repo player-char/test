@@ -655,6 +655,13 @@ clientMusic.Dispatcher.on("MESSAGE_CREATE", (e) => {
 		// обработка сообщения
 		//musicProcess(message);
 		
+		let vch = guild.voiceChannels.find(c => c.id == mus[guild.id].vid);
+		
+		if (content == 'stop') {
+			vch.leave();
+			return;
+		}
+		
 		console.log('Started!!!');
 		vch.join(false, false).then((c) => {
 			try {
