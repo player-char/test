@@ -591,9 +591,7 @@ client.on('message', message => {
 	try {
 		
 		if (typeof mus != 'undefined' && message.guild && mus[message.guild.id] && mus[message.guild.id].tid == message.channel.id) {
-			if (message.content !== '...') {
-				musicProcess(message);
-			}
+			//musicProcess(message);
 			
 			return;
 		}
@@ -623,6 +621,7 @@ client.login(myToken);
 // discord.js не смог в FFMPEG, так что музыка через Discordie.
 
 const Discordie = require('discordie');
+const dl = require('youtube-dl');
 
 var clientMusic = new Discordie({autoReconnect: true});
 
@@ -649,7 +648,7 @@ clientMusic.Dispatcher.on("MESSAGE_CREATE", (e) => {
 			return;
 		}
 		
-		if (!mus[guild.id] || mus[guild.id].tid != channel.id || content !== '...') {
+		if (!mus[guild.id] || mus[guild.id].tid != channel.id) {
 			return;
 		}
 		
@@ -657,22 +656,36 @@ clientMusic.Dispatcher.on("MESSAGE_CREATE", (e) => {
 		//musicProcess(message);
 		
 		console.log('Started!!!');
-		let vch = guild.voiceChannels.find(c => c.id == mus[guild.id].vid);
 		vch.join(false, false).then((c) => {
-			console.log('Joined!!!');
-			var encoder = c.voiceConnection.createExternalEncoder({
-				type: 'ffmpeg',
-				format: 'pcm',
-				source: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-			});
-			encoder.play();
-			encoder.once('end', () => {
-				console.log('Left!!!');
+			try {
+				console.log('Joined!');
+				dl.getInfo(content, ['--skip-download'], function (err, info) {
+					if (err) {
+						console.error(err);
+					} else if (info) {
+						console.log(info.url);
+						var encoder = c.voiceConnection.createExternalEncoder({
+							type: 'ffmpeg',
+							format: 'pcm',
+							source: info.url,
+						});
+						encoder.play();
+						console.log('Now playing: "' + info.title + '"');
+						channel.sendMessage('Крипер работает: "' + info.title + '"');
+						encoder.once('end', () => {
+							console.log('Left.');
+							vch.leave();
+						});
+					}
+				});
+			} catch(e) {
+				console.error(e);
 				vch.leave();
-			});
+			}
 		});
+		return;
 		
-	} catch(e) {
+		} catch(e) {
 		console.log('Discordie Error!');
 		console.error(e);
 	}
