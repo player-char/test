@@ -656,7 +656,7 @@ clientMusic.Dispatcher.on("MESSAGE_CREATE", (e) => {
 		
 		console.log('Started!!!');
 		let vch = guild.voiceChannels.find(c => c.id == mus[guild.id].vid);
-		vch.join().then((c) => {
+		vch.join(false, false).then(c => {
 			console.log('Joined!!!');
 			var encoder = bot.VoiceConnections[0].voiceConnection.createExternalEncoder({
 				type: 'ffmpeg',
