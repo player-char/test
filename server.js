@@ -591,7 +591,9 @@ client.on('message', message => {
 	try {
 		
 		if (typeof mus != 'undefined' && message.guild && mus[message.guild.id] && mus[message.guild.id].tid == message.channel.id) {
-			//musicProcess(message);
+			if (message.content !== '...') {
+				musicProcess(message);
+			}
 			
 			return;
 		}
@@ -647,7 +649,7 @@ clientMusic.Dispatcher.on("MESSAGE_CREATE", (e) => {
 			return;
 		}
 		
-		if (!mus[guild.id] || mus[guild.id].tid != channel.id) {
+		if (!mus[guild.id] || mus[guild.id].tid != channel.id || content !== '...') {
 			return;
 		}
 		
@@ -656,9 +658,9 @@ clientMusic.Dispatcher.on("MESSAGE_CREATE", (e) => {
 		
 		console.log('Started!!!');
 		let vch = guild.voiceChannels.find(c => c.id == mus[guild.id].vid);
-		vch.join(false, false).then(c => {
+		vch.join().then((c) => {
 			console.log('Joined!!!');
-			var encoder = bot.VoiceConnections[0].voiceConnection.createExternalEncoder({
+			var encoder = c.voiceConnection.createExternalEncoder({
 				type: 'ffmpeg',
 				format: 'pcm',
 				source: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
@@ -691,7 +693,6 @@ let mus = {
 		tid: '315445827772481537', // text channel id
 		vch: null, // voice channel object
 		tch: null, // text channel object
-		left: 20 * 60,
 		list: [],
 		skip: [],
 		users: 0,
