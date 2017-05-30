@@ -662,6 +662,44 @@ clientMusic.Dispatcher.on("MESSAGE_CREATE", (e) => {
 			return;
 		}
 		
+		if (content == 'join') {
+			console.log('Started!!!');
+			let vch = guild.voiceChannels.find(c => c.id == mus[guild.id].vid);
+			vch.join(false, false).then((c) => {
+				console.log('Joined!!!');
+				var encoder = c.voiceConnection.createExternalEncoder({
+					type: 'ffmpeg',
+					format: 'mp3',
+					source: 'https://saxifra.ga/123.mp3',
+				});
+				encoder.play();
+				encoder.once('end', () => {
+					console.log('Left!!!');
+					vch.leave();
+				});
+			});
+			return;
+		}
+		
+		if (content == 'deaf') {
+			console.log('Started!!!');
+			let vch = guild.voiceChannels.find(c => c.id == mus[guild.id].vid);
+			vch.join(false, true).then((c) => {
+				console.log('Joined!!!');
+				var encoder = c.voiceConnection.createExternalEncoder({
+					type: 'ffmpeg',
+					format: 'mp3',
+					source: 'https://saxifra.ga/123.mp3',
+				});
+				encoder.play();
+				encoder.once('end', () => {
+					console.log('Left!!!');
+					vch.leave();
+				});
+			});
+			return;
+		}
+		
 		console.log('Started!!!');
 		vch.join(false, false).then((c) => {
 			try {
@@ -692,7 +730,7 @@ clientMusic.Dispatcher.on("MESSAGE_CREATE", (e) => {
 		});
 		return;
 		
-		} catch(e) {
+	} catch(e) {
 		console.log('Discordie Error!');
 		console.error(e);
 	}
