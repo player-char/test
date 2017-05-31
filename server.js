@@ -779,9 +779,9 @@ function musicPut(message, q, search) {
 	}
 	
 	cmus.adding = true;
-	vch.join(false, true).then((c) => {
+	cmus.vch.join(false, true).then((c) => {
 		if (!cmus.adding && !cmus.c) {
-			vch.leave();
+			cmus.vch.leave();
 		}
 	}).catch(e => console.log);
 	
