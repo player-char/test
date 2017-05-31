@@ -714,7 +714,6 @@ function delMD(s) {
 }
 
 function musicProcess(message) {
-	const message = e.message;
 	const channel = message.channel;
 	const guild = channel.guild;
 	
