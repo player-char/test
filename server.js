@@ -668,6 +668,7 @@ let mus = {
 		tid: '315445827772481537', // text channel id
 		vch: null, // voice channel object
 		tch: null, // text channel object
+		guild: null,
 		list: [],
 		skip: [],
 		users: 0,
@@ -718,6 +719,7 @@ function musicProcess(message) {
 	const guild = channel.guild;
 	
 	const cmus = mus[message.guild.id];
+	cmus.guild = guild;
 	let uc = message.content.trim();
 	let m;
 	
@@ -764,7 +766,7 @@ function musicPut(message, q, search) {
 		return;
 	}
 	
-	ret(cmus, '"' + q + '", ' + search);
+	console.log('"' + q + '", ' + search);
 	
 	cmus.users = cmus.vch.members.length;
 	
@@ -851,32 +853,6 @@ function musicPut(message, q, search) {
 	}
 }
 
-function musicRejoin(cmus) {
-	if (!cmus.c) {
-		ret(cmus, 'Rejoining...');
-		cmus.c = 'pending';
-		
-		cmus.vch.join(false, false).then(c => {
-			ret(cmus, 'Rejoined.');
-			cmus.c = c.voiceConnection;
-			try {
-				musicPlay(cmus);
-				ret(cmus, 'Set to play.');
-			} catch(e) {
-				ret(cmus, 'Упс, не получилось поставить.');
-				console.log('Failed to play the music.');
-				console.error(e);
-				musicPlay(cmus);
-			}
-		}).catch(e => {
-			ret(cmus, 'Ой, я споткнулся о ступеньку, когда заходил в канал.');
-			console.log('Failed to join voice channel.');
-			console.error(e);
-			musicStop(cmus);
-		});
-	}
-}
-
 function musicPush(cmus, url, user, title, author) {
 	cmus.list.push({
 		title: title,
@@ -889,6 +865,34 @@ function musicPush(cmus, url, user, title, author) {
 	
 	musicRejoin(cmus);
 	musicUpdate(cmus);
+}
+
+function musicRejoin(cmus) {
+	if (!cmus.c) {
+		console.log('Rejoining...');
+		cmus.c = 'pending';
+		
+		// connection bugs or lags
+		let vch = cmus.guild.voiceChannels.find(c => c.id == mus[guild.id].vid);
+		vch.join(false, false).then(c => {
+			console.log('Rejoined.');
+			cmus.c = c.voiceConnection;
+			try {
+				musicPlay(cmus);
+				console.log('Set to play.');
+			} catch(e) {
+				ret(cmus, 'Упс, не получилось поставить.');
+				console.log('Failed to play the music.');
+				console.error(e);
+				musicPlay(cmus);
+			}
+		}).catch(e => {
+			ret(cmus, 'Ауч, я споткнулся о ступеньку, когда заходил в канал.');
+			console.log('Failed to join voice channel.');
+			console.error(e);
+			musicStop(cmus);
+		});
+	}
 }
 
 function musicPlay(cmus) {
@@ -936,8 +940,8 @@ function musicConnect(cmus, info) {
 }
 
 function musicStr(item) {
-	//return '"' + item.title + '" (' + item.author + ')\n<https://youtu.be/' + item.url + '>';
-	return '``' + delMD(item.title) + '``, <https://youtu.be/' + item.url + '>,\nдобавлено пользователем ' + item.user.mention + '.';
+	return '``' + delMD(item.title) + '``, <https://youtu.be/' + item.url +
+	'>,\nдобавлено пользователем ' + delMD(item.user.nick || item.user.username) + '.';
 }
 
 function musicUpdate(cmus) {
@@ -948,6 +952,8 @@ function musicUpdate(cmus) {
 	let ctext = 'Текущее: ' + (cmus.curr ? musicStr(cmus.curr) : '<пусто>') + '\n';
 	
 	cmus.users = cmus.vch.members.length;
+	
+	console.log(cmus.members);
 	
 	if (cmus.skip.length) {
 		ctext += 'За пропуск проголосовали: ' + cmus.skip.length + ' из ' + Math.floor(cmus.users / 2) + '.\n'
