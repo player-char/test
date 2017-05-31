@@ -780,7 +780,7 @@ function musicPut(message, q, search) {
 	
 	cmus.adding = true;
 	
-	cmus.guild.voiceChannels.find(c => c.id == mus[cmus.guild.id].vid).join(false, true).then((c) => {
+	message.guild.voiceChannels.find(c => c.id == mus[message.guild.id].vid).join(false, true).then((c) => {
 		if (!cmus.adding && !cmus.c) {
 			cmus.vch.leave();
 		}
