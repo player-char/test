@@ -635,6 +635,7 @@ clientMusic.Dispatcher.on("GATEWAY_READY", e => {
 
 clientMusic.Dispatcher.on("MESSAGE_CREATE", (e) => {
 	const message = e.message;
+	const content = message.content;
 	const channel = message.channel;
 	const guild = channel.guild;
 	
@@ -649,6 +650,83 @@ clientMusic.Dispatcher.on("MESSAGE_CREATE", (e) => {
 		}
 		
 		if (!mus[guild.id] || mus[guild.id].tid != channel.id) {
+			return;
+		}
+		
+		let vch = guild.voiceChannels.find(c => c.id == mus[guild.id].vid);
+
+		if (content == 'stop') {
+			vch.leave();
+			return;
+		}
+
+		if (content == 'join') {
+			console.log('Started!!!');
+			let vch = guild.voiceChannels.find(c => c.id == mus[guild.id].vid);
+			vch.join(false, false).then((c) => {
+				console.log('Joined!!!');
+				var encoder = c.voiceConnection.createExternalEncoder({
+					type: 'ffmpeg',
+					format: 'mp3',
+					source: 'https://saxifra.ga/123.mp3',
+				});
+				encoder.play();
+				encoder.once('end', () => {
+					console.log('Left!!!');
+					vch.leave();
+				});
+			});
+			return;
+		}
+
+		if (content == 'deaf') {
+			console.log('Started!!!');
+			let vch = guild.voiceChannels.find(c => c.id == mus[guild.id].vid);
+			vch.join(false, true).then((c) => {
+				console.log('Joined!!!');
+				var encoder = c.voiceConnection.createExternalEncoder({
+					type: 'ffmpeg',
+					format: 'mp3',
+					source: 'https://saxifra.ga/123.mp3',
+				});
+				encoder.play();
+				encoder.once('end', () => {
+					console.log('Left!!!');
+					vch.leave();
+				});
+			});
+			return;
+		}
+
+		if (content[0] == '$') {
+			console.log('Started!!!');
+			vch.join(false, false).then((c) => {
+				try {
+					console.log('Joined!');
+					dl.getInfo(content.slice(1), ['--skip-download'], function (err, info) {
+						if (err) {
+							console.error(err);
+						} else if (info) {
+							console.log(info.url);
+							var encoder = c.voiceConnection.createExternalEncoder({
+								type: 'ffmpeg',
+								format: 'pcm',
+								source: info.url,
+							});
+							encoder.play();
+							console.log('Now playing: "' + info.title + '"');
+							channel.sendMessage('Крипер работает: "' + info.title + '"');
+							encoder.once('end', () => {
+								console.log('Left.');
+								vch.leave();
+							});
+						}
+					});
+				} catch(e) {
+					console.error(e);
+					vch.leave();
+				}
+			});
 			return;
 		}
 		
