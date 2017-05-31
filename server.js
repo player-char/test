@@ -68,10 +68,10 @@ function customReact(message, name) {
 		// private messaging
 		return false;
 	}
-	let arr = message.guild.emojis.array();
-	for (let i = 0; i < arr.length; i++) {
-		if (arr[i].name == name) {
-			message.react(arr[i]);
+	let map = message.guild.emojis;
+	for (let i of map) {
+		if (i.name == name) {
+			message.react(i);
 			return true;
 		}
 	}
@@ -622,6 +622,7 @@ client.login(myToken);
 
 const Discordie = require('discordie');
 const dl = require('youtube-dl');
+const https = require('https');
 
 var clientMusic = new Discordie({autoReconnect: true});
 
@@ -634,7 +635,6 @@ clientMusic.Dispatcher.on("GATEWAY_READY", e => {
 
 clientMusic.Dispatcher.on("MESSAGE_CREATE", (e) => {
 	const message = e.message;
-	const content = message.content;
 	const channel = message.channel;
 	const guild = channel.guild;
 	
@@ -653,95 +653,12 @@ clientMusic.Dispatcher.on("MESSAGE_CREATE", (e) => {
 		}
 		
 		// обработка сообщения
-		//musicProcess(message);
-		
-		let vch = guild.voiceChannels.find(c => c.id == mus[guild.id].vid);
-		
-		if (content == 'stop') {
-			vch.leave();
-			return;
-		}
-		
-		if (content == 'join') {
-			console.log('Started!!!');
-			let vch = guild.voiceChannels.find(c => c.id == mus[guild.id].vid);
-			vch.join(false, false).then((c) => {
-				console.log('Joined!!!');
-				var encoder = c.voiceConnection.createExternalEncoder({
-					type: 'ffmpeg',
-					format: 'mp3',
-					source: 'https://saxifra.ga/123.mp3',
-				});
-				encoder.play();
-				encoder.once('end', () => {
-					console.log('Left!!!');
-					vch.leave();
-				});
-			});
-			return;
-		}
-		
-		if (content == 'deaf') {
-			console.log('Started!!!');
-			let vch = guild.voiceChannels.find(c => c.id == mus[guild.id].vid);
-			vch.join(false, true).then((c) => {
-				console.log('Joined!!!');
-				var encoder = c.voiceConnection.createExternalEncoder({
-					type: 'ffmpeg',
-					format: 'mp3',
-					source: 'https://saxifra.ga/123.mp3',
-				});
-				encoder.play();
-				encoder.once('end', () => {
-					console.log('Left!!!');
-					vch.leave();
-				});
-			});
-			return;
-		}
-		
-		console.log('Started!!!');
-		vch.join(false, false).then((c) => {
-			try {
-				console.log('Joined!');
-				dl.getInfo(content, ['--skip-download'], function (err, info) {
-					if (err) {
-						console.error(err);
-					} else if (info) {
-						console.log(info.url);
-						var encoder = c.voiceConnection.createExternalEncoder({
-							type: 'ffmpeg',
-							format: 'pcm',
-							source: info.url,
-						});
-						encoder.play();
-						console.log('Now playing: "' + info.title + '"');
-						channel.sendMessage('Крипер работает: "' + info.title + '"');
-						encoder.once('end', () => {
-							console.log('Left.');
-							vch.leave();
-						});
-					}
-				});
-			} catch(e) {
-				console.error(e);
-				vch.leave();
-			}
-		});
-		return;
-		
+		musicProcess(message);
 	} catch(e) {
 		console.log('Discordie Error!');
 		console.error(e);
 	}
 });
-
-
-
-
-const ytdl = require('ytdl-core');
-const https = require('https');
-
 
 // данные о музыкальных каналах
 let mus = {
@@ -754,7 +671,8 @@ let mus = {
 		list: [],
 		skip: [],
 		users: 0,
-		c: null,
+		c: null, // connection
+		e: null, // encoder
 		curr: null,
 		stat: null,
 	},
@@ -777,7 +695,7 @@ function ret(cmus, result) {
 		return;
 	}
 	setTimeout(() => {
-		cmus.tch.send(result).then(message => {
+		cmus.tch.sendMessage(result).then(message => {
 			autoRemove(message);
 		});
 	}, 150);
@@ -791,13 +709,21 @@ function decodeHTML(s) {
 	return s.replace(/&#(\d{1,8});/g, function(a, b) {return String.fromCharCode(+b)});
 }
 
+function delMD(s) {
+	return s.replace(/`{2,}/g, '`');
+}
+
 function musicProcess(message) {
-	let cmus = mus[message.guild.id];
+	const message = e.message;
+	const channel = message.channel;
+	const guild = channel.guild;
+	
+	const cmus = mus[message.guild.id];
 	let uc = message.content.trim();
 	let m;
 	
-	cmus.vch = message.guild.channels.get(cmus.vid);
-	cmus.tch = message.guild.channels.get(cmus.tid);
+	cmus.vch = guild.voiceChannels.find(c => c.id == mus[guild.id].vid);
+	cmus.tch = channel;
 	
 	autoRemove(message);
 	
@@ -824,36 +750,9 @@ function musicProcess(message) {
 	}
 	
 	// stop
-	if (uc == 'halt!') {
+	if (uc == 'kick') {
 		musicStop(cmus);
 		return;
-	}
-	
-	// eval
-	if (uc[0] == '#') {
-		try {
-			ret(cmus, String(eval(uc.slice(1))));
-		} catch(err) {
-			ret(cmus, String(err));
-		}
-		return;
-	}
-	
-	if (uc == 'join') {
-		const voiceChannel = message.member.voiceChannel;
-		if (!voiceChannel) {
-		  return message.reply('Please be in a voice channel first!');
-		}
-		voiceChannel.join().then(connection => {
-			ret(cmus, 'Joined!');
-			let stream = ytdl('https://www.youtube.com/watch?v=dQw4w9WgXcQ', {
-				filter : 'audioonly',
-			});
-			const dispatcher = connection.playStream(stream);
-			dispatcher.on('end', () => {
-				voiceChannel.leave();
-			});
-		});
 	}
 }
 
@@ -870,19 +769,9 @@ function musicPut(message, q, search) {
 	
 	cmus.users = cmus.vch.members.length;
 	
-	if (!cmus.vch.joinable) {
-		return ret(cmus, 'Что-то канал закрытый.');
-	}
-	if (!cmus.vch.speakable) {
-		return ret(cmus, 'Что-то канал неразговорный.');
-	}
-	if (cmus.vch.full) {
-		return ret(cmus, 'Канал забит, не могу залезть.');
-	}
 	if (!cmus.vch.members.find(c => c.id == message.author.id)) {
 		return ret(cmus, 'Эй, сначала зайди в голосовой канал `' + cmus.vch.name + '`, для кого я играть-то буду?');
 	}
-	
 	
 	if (cmus.list.length >= mus.maxList) {
 		musicRejoin(cmus);
@@ -936,16 +825,31 @@ function musicPut(message, q, search) {
 		});
 	} else {
 		// direct video url
-		ytdl.getInfo(q, (err, info) => {
-			if (err) {
-				console.log('Can\'t get info: ');
+		https.get('https://www.youtube.com/embed/' + q, response => {
+			console.log('Request started...');
+			let data = '';
+			
+			response.on('data', part => {
+				data += part;
+			});
+			
+			response.on('end', () => {
+				console.log('Request ended...');
+				if (+(response.statusCode) != 200) {
+					return ret(cmus, 'Запрос провалился. Сервера ответ: ' + response.statusCode);
+				}
+				let title = decodeHTML(data.match(/<title>([^<]*)</)[1]);
+				//let author = decodeHTML(piece.match(/g-hovercard[^>]+>([^<]*)</)[1]);
+				musicPush(cmus, q, message.author, title, "...");
+			});
+			
+			response.on('error', err => {
+				console.log('Can\'t load search results: ');
 				console.error(err);
-				ret(cmus, 'В YouTube не обнаружено такого видео.\nИскать по названию так: `+ <поисковой запрос>`');
-			}
-			musicPush(cmus, q, message.author, info.title, info.author.name);
+				return ret(cmus, 'Упс, во время поиска что-то оборвалось.');
+			});
 		});
 	}
-	
 }
 
 function musicRejoin(cmus) {
@@ -953,9 +857,9 @@ function musicRejoin(cmus) {
 		ret(cmus, 'Rejoining...');
 		cmus.c = 'pending';
 		
-		cmus.vch.join().then(c => {
+		cmus.vch.join(false, false).then(c => {
 			ret(cmus, 'Rejoined.');
-			cmus.c = c;
+			cmus.c = c.voiceConnection;
 			try {
 				musicPlay(cmus);
 				ret(cmus, 'Set to play.');
@@ -982,59 +886,69 @@ function musicPush(cmus, url, user, title, author) {
 		url: url,
 	});
 	
+	ret(cmus, 'Добавлено в очередь: ' + title);
+	
 	musicRejoin(cmus);
 	musicUpdate(cmus);
 }
 
 function musicPlay(cmus) {
 	if (cmus.list.length == 0) {
-		musicStop(cmus);
 		ret(cmus, 'Музыка закончилась, выхожу из канала.');
+		musicStop(cmus);
 		return;
 	}
 	
 	cmus.curr = cmus.list.shift();
-	ret(cmus, 'Playing link "' + cmus.curr.url + '"');
 	console.log('> [https://youtu.be/' + cmus.curr.url + ']');
 	
-	const stream = ytdl('https://www.youtube.com/watch?v=' + cmus.curr.url, {filter: 'audioonly'});
-	musicConnect(cmus, stream);
+	dl.getInfo('https://www.youtube.com/watch?v=' + cmus.curr.url, ['--skip-download'], function (err, info) {
+		if (err || !info) {
+			console.error(err);
+			ret(cmus, 'Упс, не удалось получить стрим ' + cmus.curr.url);
+			musicPlay(cmus);
+		} else if (info) {
+			musicConnect(cmus, info);
+		}
+	});
 }
 
-function musicConnect(cmus, stream) {
-	const dispatcher = cmus.c.playStream(stream);
-	musicUpdate(cmus);
-	
-	dispatcher.on('start', () => {
-		ret(cmus, '<@' + cmus.curr.user + '>, играет твоя музыка: `https://youtu.be/' + cmus.curr.url + '`');
+function musicConnect(cmus, info) {
+	//console.log(info.url);
+	if (cmus.e) {
+		cmus.e.destroy();
+	}
+	var encoder = cmus.e = cmus.c.createExternalEncoder({
+		type: 'ffmpeg',
+		format: 'pcm',
+		source: info.url,
 	});
-	
-	dispatcher.on('end', reason => {
+	encoder.play();
+	console.log('Now playing: "' + info.title + '"');
+	ret(cmus, 'Сейчас играет музыка "' + info.title + '"');
+	encoder.once('end', () => {
+		console.log('Music ended.');
 		musicPlay(cmus);
 	});
-	
-	dispatcher.on('error', e => {
-		console.log('Music playing error!');
-		console.error(e);
-		ret(cmus, 'Не получилось проиграть `' + cmus.curr.url + '`.');
-		
+	encoder.on('error', (e) => {
+		console.log('Encoder error: ' + e);
 		musicPlay(cmus);
 	});
 }
 
 function musicStr(item) {
-	return '"' + item.title + '" (' + item.author + ')\n<https://youtu.be/' + item.url + '>';
+	//return '"' + item.title + '" (' + item.author + ')\n<https://youtu.be/' + item.url + '>';
+	return '``' + delMD(item.title) + '``, <https://youtu.be/' + item.url + '>,\nдобавлено пользователем ' + item.user.mention + '.';
 }
 
 function musicUpdate(cmus) {
-	
 	if (!cmus.c) {
 		return;
 	}
 	
 	let ctext = 'Текущее: ' + (cmus.curr ? musicStr(cmus.curr) : '<пусто>') + '\n';
 	
-	cmus.users = cmus.vch.members.size;
+	cmus.users = cmus.vch.members.length;
 	
 	if (cmus.skip.length) {
 		ctext += 'За пропуск проголосовали: ' + cmus.skip.length + ' из ' + Math.floor(cmus.users / 2) + '.\n'
@@ -1052,36 +966,53 @@ function musicUpdate(cmus) {
 	}
 	
 	ctext += '\n\nКоманды простые и понятные:';
-	ctext += '\n"<ссылка на видео в YouTube>" - поставить музыку из видео.';
-	ctext += '\n"+ <название>" - ищет в YouTube, выбирает первое найденное.';
-	ctext += '\n"? <название>" - ищет в YouTube, рандомно с 1 страницы поиска.';
-	ctext += '\n"-" - проголосовать за пропуск того, что сейчас играет.';
+	ctext += '\n`<ссылка на видео в YouTube>` ― поставить музыку из видео.';
+	ctext += '\n`+ <название>` ― ищет в YouTube, выбирает первое найденное.';
+	ctext += '\n`? <название>` ― ищет в YouTube, рандомно с 1 страницы поиска.';
+	ctext += '\n`-` ― проголосовать за пропуск того, что сейчас играет.';
 	
-	ctext = '```\n' + ctext + '\n```';
+	//ctext = '```\n' + ctext + '\n```';
 	
+	musicRetext(cmus, ctext);
+}
+
+function musicRetext(cmus, ctext) {
 	if (cmus.stat && cmus.stat.then) {
 		cmus.stat.then(message => {
 			return cmus.stat.edit(ctext);
-		});
+		}).catch(console.error);
 		return;
 	}
 	
 	if (cmus.stat) {
-		return cmus.stat.edit(ctext);
+		return cmus.stat = cmus.stat.edit(ctext);
 	} else {
-		return cmus.stat = cmus.tch.send(ctext).then(message => {
+		return cmus.stat = cmus.tch.sendMessage(ctext).then(message => {
 			return cmus.stat = message;
-		});
+		}).catch(console.error);
 	}
 }
 
+function musicRemember(cmus) {
+	
+}
+
 function musicStop(cmus) {
-	if (cmus.c) {
-		cmus.c = null;
-		cmus.curr = null;
-		cmus.list = [];
-		cmus.skip = [];
-		cmus.vch.leave();
-		musicUpdate(cmus);
+	try {
+		if (cmus.c) {
+			if (cmus.e) {
+				cmus.e.stop();
+				cmus.e.destroy();
+				cmus.e = null;
+			}
+			cmus.c = null;
+			cmus.curr = null;
+			cmus.list = [];
+			cmus.skip = [];
+			cmus.vch.leave();
+			musicUpdate(cmus);
+		}
+	} catch(e) {
+		console.error(e);
 	}
 }
