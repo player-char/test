@@ -652,14 +652,17 @@ clientMusic.Dispatcher.on("MESSAGE_CREATE", (e) => {
 			return;
 		}
 		
-		if (message.context == '@') {
+		// test
+		if (message.content == '%') {
 			const cmus = mus[message.guild.id];
-			let vch = message.guild.voiceChannels.find(c => c.id == mus[message.guild.id].vid);
+			console.log("% start");
+			let vch = message.guild.voiceChannels.find(c => c.id == cmus.vid);
 			vch.join(false, false).then((c) => {
+				console.log("% done");
 				if (!cmus.adding && !cmus.c) {
 					vch.leave();
 				}
-			}).catch(console.log);
+			}).catch(console.error);
 		}
 		
 		// обработка сообщения
@@ -732,7 +735,7 @@ function musicProcess(message) {
 	let uc = message.content.trim();
 	let m;
 	
-	cmus.vch = guild.voiceChannels.find(c => c.id == mus[guild.id].vid);
+	cmus.vch = guild.voiceChannels.find(c => c.id == cmus.vid);
 	cmus.tch = channel;
 	
 	autoRemove(message);
@@ -790,7 +793,7 @@ function musicPut(message, q, search) {
 	
 	cmus.adding = true;
 	
-	message.guild.voiceChannels.find(c => c.id == mus[message.guild.id].vid).join(false, false).then((c) => {
+	message.guild.voiceChannels.find(c => c.id == cmus.vid).join(false, false).then((c) => {
 		if (!cmus.adding && !cmus.c) {
 			cmus.vch.leave();
 		}
@@ -960,8 +963,8 @@ function musicConnect(cmus, info) {
 }
 
 function musicStr(item) {
-	return '``' + escMD(item.title) + '``,\n<https://youtu.be/' + item.url +
-	'>,\nдобавлено пользователем ``' + escMD(item.user.nick || item.user.username) + '``.';
+	return escMD(item.title) + ',\n<https://youtu.be/' + item.url +
+	'>,\nдобавлено пользователем ' + escMD(item.user.nick || item.user.username) + '.';
 }
 
 function musicUpdate(cmus) {
