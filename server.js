@@ -662,7 +662,7 @@ clientMusic.Dispatcher.on("MESSAGE_CREATE", (e) => {
 
 // данные о музыкальных каналах
 let mus = {
-	maxList: 10,
+	maxList: 20,
 	'175951720990507008': {
 		vid: '315439572710326284', // voice channel id
 		tid: '315445827772481537', // text channel id
@@ -710,8 +710,8 @@ function decodeHTML(s) {
 	return s.replace(/&#(\d{1,8});/g, function(a, b) {return String.fromCharCode(+b)});
 }
 
-function delMD(s) {
-	return s.replace(/`{2,}/g, '`');
+function escMD(s) {
+	return s.replace(/([`*~_\\])/g, '\\$1');
 }
 
 function musicProcess(message) {
@@ -779,7 +779,8 @@ function musicPut(message, q, search) {
 	}
 	
 	cmus.adding = true;
-	cmus.vch.join(false, true).then((c) => {
+	
+	cmus.guild.voiceChannels.find(c => c.id == mus[cmus.guild.id].vid).join(false, true).then((c) => {
 		if (!cmus.adding && !cmus.c) {
 			cmus.vch.leave();
 		}
@@ -949,8 +950,8 @@ function musicConnect(cmus, info) {
 }
 
 function musicStr(item) {
-	return '``' + delMD(item.title) + '``, <https://youtu.be/' + item.url +
-	'>,\nдобавлено пользователем ' + delMD(item.user.nick || item.user.username) + '.';
+	return '``' + escMD(item.title) + '``,\n<https://youtu.be/' + item.url +
+	'>,\nдобавлено пользователем ``' + escMD(item.user.nick || item.user.username) + '``.';
 }
 
 function musicUpdate(cmus) {
@@ -980,10 +981,10 @@ function musicUpdate(cmus) {
 	}
 	
 	ctext += '\n\nКоманды простые и понятные:';
-	ctext += '\n`<ссылка на видео в YouTube>` ― поставить музыку из видео.';
-	ctext += '\n`+ <название>` ― ищет в YouTube, выбирает первое найденное.';
-	ctext += '\n`? <название>` ― ищет в YouTube, рандомно с 1 страницы поиска.';
-	ctext += '\n`-` ― проголосовать за пропуск того, что сейчас играет.';
+	ctext += '\n**<ссылка на видео в YouTube>** ― поставить музыку из видео.';
+	ctext += '\n**+ <название>** ― ищет в YouTube, выбирает первое найденное.';
+	ctext += '\n**? <название>** ― ищет в YouTube, рандомно с 1 страницы поиска.';
+	ctext += '\n**-** ― проголосовать за пропуск того, что сейчас играет.';
 	
 	//ctext = '```\n' + ctext + '\n```';
 	
