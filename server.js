@@ -668,7 +668,7 @@ let mus = {
 		tid: '315445827772481537', // text channel id
 		vch: null, // voice channel object
 		tch: null, // text channel object
-		guild: null,
+		adding: false,
 		list: [],
 		skip: [],
 		users: 0,
@@ -719,7 +719,6 @@ function musicProcess(message) {
 	const guild = channel.guild;
 	
 	const cmus = mus[message.guild.id];
-	cmus.guild = guild;
 	let uc = message.content.trim();
 	let m;
 	
@@ -779,6 +778,13 @@ function musicPut(message, q, search) {
 		return ret(cmus, 'Довольно добавлять, пусть сначала текущее доиграет.');
 	}
 	
+	cmus.adding = true;
+	vch.join(false, true).then((c) => {
+		if (!cmus.adding && !cmus.c) {
+			vch.leave();
+		}
+	}).catch(e => console.log);
+	
 	console.log('Continued...');
 	
 	if (search != -1) {
@@ -792,6 +798,7 @@ function musicPut(message, q, search) {
 			});
 			
 			response.on('end', () => {
+				cmus.adding = false;
 				console.log('Search results ended...');
 				if (+(response.statusCode) != 200) {
 					return ret(cmus, 'Поиск провалился. Сервера ответ: ' + response.statusCode);
@@ -819,6 +826,7 @@ function musicPut(message, q, search) {
 			});
 			
 			response.on('error', err => {
+				cmus.adding = false;
 				console.log('Can\'t load search results: ');
 				console.error(err);
 				return ret(cmus, 'Упс, во время поиска что-то оборвалось.');
@@ -835,6 +843,7 @@ function musicPut(message, q, search) {
 			});
 			
 			response.on('end', () => {
+				cmus.adding = false;
 				console.log('Request ended...');
 				if (+(response.statusCode) != 200) {
 					return ret(cmus, 'Запрос провалился. Сервера ответ: ' + response.statusCode);
@@ -845,6 +854,7 @@ function musicPut(message, q, search) {
 			});
 			
 			response.on('error', err => {
+				cmus.adding = false;
 				console.log('Can\'t load search results: ');
 				console.error(err);
 				return ret(cmus, 'Упс, во время поиска что-то оборвалось.');
@@ -873,8 +883,7 @@ function musicRejoin(cmus) {
 		cmus.c = 'pending';
 		
 		// connection bugs or lags
-		let vch = cmus.guild.voiceChannels.find(c => c.id == mus[cmus.guild.id].vid);
-		vch.join(false, false).then(c => {
+		cmus.vch.join(false, true).then(c => {
 			console.log('Rejoined.');
 			cmus.c = c.voiceConnection;
 			try {
@@ -985,7 +994,7 @@ function musicRetext(cmus, ctext) {
 	if (cmus.stat && cmus.stat.then) {
 		cmus.stat.then(message => {
 			return cmus.stat.edit(ctext);
-		}).catch(console.error);
+		}).catch(e => console.error);
 		return;
 	}
 	
@@ -994,7 +1003,7 @@ function musicRetext(cmus, ctext) {
 	} else {
 		return cmus.stat = cmus.tch.sendMessage(ctext).then(message => {
 			return cmus.stat = message;
-		}).catch(console.error);
+		}).catch(e => console.error);
 	}
 }
 
