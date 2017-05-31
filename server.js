@@ -873,7 +873,7 @@ function musicRejoin(cmus) {
 		cmus.c = 'pending';
 		
 		// connection bugs or lags
-		let vch = cmus.guild.voiceChannels.find(c => c.id == mus[guild.id].vid);
+		let vch = cmus.guild.voiceChannels.find(c => c.id == mus[cmus.guild.id].vid);
 		vch.join(false, false).then(c => {
 			console.log('Rejoined.');
 			cmus.c = c.voiceConnection;
