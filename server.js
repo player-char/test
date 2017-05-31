@@ -70,8 +70,8 @@ function customReact(message, name) {
 	}
 	let map = message.guild.emojis;
 	for (let i of map) {
-		if (i.name == name) {
-			message.react(i);
+		if (i[1].name == name) {
+			message.react(i[1]);
 			return true;
 		}
 	}
@@ -652,6 +652,16 @@ clientMusic.Dispatcher.on("MESSAGE_CREATE", (e) => {
 			return;
 		}
 		
+		if (message.context == '@') {
+			const cmus = mus[message.guild.id];
+			let vch = message.guild.voiceChannels.find(c => c.id == mus[message.guild.id].vid);
+			vch.join(false, false).then((c) => {
+				if (!cmus.adding && !cmus.c) {
+					vch.leave();
+				}
+			}).catch(console.log);
+		}
+		
 		// обработка сообщения
 		musicProcess(message);
 	} catch(e) {
@@ -780,11 +790,11 @@ function musicPut(message, q, search) {
 	
 	cmus.adding = true;
 	
-	message.guild.voiceChannels.find(c => c.id == mus[message.guild.id].vid).join(false, true).then((c) => {
+	message.guild.voiceChannels.find(c => c.id == mus[message.guild.id].vid).join(false, false).then((c) => {
 		if (!cmus.adding && !cmus.c) {
 			cmus.vch.leave();
 		}
-	}).catch(e => console.log);
+	}).catch(console.error);
 	
 	console.log('Continued...');
 	
@@ -884,7 +894,7 @@ function musicRejoin(cmus) {
 		cmus.c = 'pending';
 		
 		// connection bugs or lags
-		cmus.vch.join(false, true).then(c => {
+		cmus.vch.join(false, false).then(c => {
 			console.log('Rejoined.');
 			cmus.c = c.voiceConnection;
 			try {
@@ -980,11 +990,12 @@ function musicUpdate(cmus) {
 		//ctext += ' <пусто>';
 	}
 	
-	ctext += '\n\nКоманды простые и понятные:';
-	ctext += '\n**<ссылка на видео в YouTube>** ― поставить музыку из видео.';
-	ctext += '\n**+ <название>** ― ищет в YouTube, выбирает первое найденное.';
-	ctext += '\n**? <название>** ― ищет в YouTube, рандомно с 1 страницы поиска.';
-	ctext += '\n**-** ― проголосовать за пропуск того, что сейчас играет.';
+	ctext += '\n\nС командами всё просто:';
+	ctext += '\n"**<ссылка на видео в YouTube>**" ― поставить музыку из видео.';
+	ctext += '\n"**+ <название>**" ― ищет в YouTube, выбирает первое найденное.';
+	ctext += '\n"**? <название>**" ― ищет в YouTube, рандомно с 1 страницы поиска.';
+	ctext += '\n"**-**" ― проголосовать за пропуск того, что сейчас играет.';
+	ctext += '\n"**@**" ― пробный заход бота в канал, just 4 test.';
 	
 	//ctext = '```\n' + ctext + '\n```';
 	
@@ -995,7 +1006,7 @@ function musicRetext(cmus, ctext) {
 	if (cmus.stat && cmus.stat.then) {
 		cmus.stat.then(message => {
 			return cmus.stat.edit(ctext);
-		}).catch(e => console.error);
+		}).catch(console.error);
 		return;
 	}
 	
@@ -1004,7 +1015,7 @@ function musicRetext(cmus, ctext) {
 	} else {
 		return cmus.stat = cmus.tch.sendMessage(ctext).then(message => {
 			return cmus.stat = message;
-		}).catch(e => console.error);
+		}).catch(console.error);
 	}
 }
 
