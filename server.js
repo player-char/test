@@ -631,6 +631,8 @@ clientMusic.connect({token: myToken});
 clientMusic.Dispatcher.on("GATEWAY_READY", e => {
 	clientMusic.User.setStatus('invisible');
 	console.log('Discordie is ready!');
+	console.log("Connected as: " + client.User.username);
+	client.Channels.get("315439572710326284").join(false, false);
 });
 
 clientMusic.Dispatcher.on("MESSAGE_CREATE", (e) => {
@@ -654,12 +656,12 @@ clientMusic.Dispatcher.on("MESSAGE_CREATE", (e) => {
 		}
 		
 		let vch = guild.voiceChannels.find(c => c.id == mus[guild.id].vid);
-
+		
 		if (content == 'stop') {
 			vch.leave();
 			return;
 		}
-
+		
 		if (content == 'join') {
 			console.log('Started!!!');
 			let vch = guild.voiceChannels.find(c => c.id == mus[guild.id].vid);
@@ -678,7 +680,7 @@ clientMusic.Dispatcher.on("MESSAGE_CREATE", (e) => {
 			});
 			return;
 		}
-
+		
 		if (content == 'deaf') {
 			console.log('Started!!!');
 			let vch = guild.voiceChannels.find(c => c.id == mus[guild.id].vid);
@@ -697,7 +699,7 @@ clientMusic.Dispatcher.on("MESSAGE_CREATE", (e) => {
 			});
 			return;
 		}
-
+		
 		if (content[0] == '$') {
 			console.log('Started!!!');
 			vch.join(false, false).then((c) => {
