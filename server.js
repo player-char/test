@@ -631,8 +631,8 @@ clientMusic.connect({token: myToken});
 clientMusic.Dispatcher.on("GATEWAY_READY", e => {
 	clientMusic.User.setStatus('invisible');
 	console.log('Discordie is ready!');
-	console.log("Connected as: " + client.User.username);
-	client.Channels.get("315439572710326284").join(false, false);
+	console.log("Connected as: " + clientMusic.User.username);
+	clientMusic.Channels.get("315439572710326284").join(false, false);
 });
 
 clientMusic.Dispatcher.on("MESSAGE_CREATE", (e) => {
