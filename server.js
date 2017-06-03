@@ -10,7 +10,7 @@ let myToken = process.env.BOT_TOKEN;
 let myId = '311163859580747778';
 // floodless channels
 let floodless = [
-	'236835572692287488',
+	'175956780398936065',
 ];
 // user ids to ignore
 let ignores = [
