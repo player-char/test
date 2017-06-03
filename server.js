@@ -18,6 +18,10 @@ let ignores = [
 ];
 let wrecked = false;
 let hidden = false;
+let timestamps = {
+	norm: -Infinity,
+	good: -Infinity,
+}
 
 // выдаёт true с указанным шансом
 function chance(a) {
@@ -110,17 +114,18 @@ function checkReply(message, flags) {
 	let uc = message.content.trim();
 	let lc = uc.toLowerCase();
 	let m = null;
+	let now = Date.now();
+	let floodey = message.guild && (floodless.indexOf(message.channel.id) != -1);
 	
 	function cutOff(m) {
 		if (m.index) {
-			lc = (lc.slice(0, m.index) + ' ' + lc.slice(m.index + m[0].length)).trim();
-			uc = (uc.slice(0, m.index) + ' ' + uc.slice(m.index + m[0].length)).trim();
+			lc = (lc.slice(0, m.index) + ' ' + lc.slice(m.index + m[0].length));
+			uc = (uc.slice(0, m.index) + ' ' + uc.slice(m.index + m[0].length));
 		} else {
 			lc = lc.slice(m.index + m[0].length);
 			uc = uc.slice(m.index + m[0].length);
 		}
 	}
-	
 	
 	// <@...> mentioning
 	m = lc.match('<@' + myId + '>[,.?! ]*');
@@ -137,17 +142,15 @@ function checkReply(message, flags) {
 	
 	
 	// exact match
-	if (lc === 'нет') {
-		return 'крипера ответ.';
+	m = lc.match(/^ ?не([ат])$/);
+	if (m) {
+		return 'крипера отве' + m[1] + '.';
 	}
-	if (lc === 'неа') {
-		return 'крипера отвеа.';
-	}
-	if (lc === '> 1') {
+	if (lc.match(/^ ?> 1$/)) {
 		flags.r = 'say';
 		return ['1 <', '< 1', '1 >', '>1<', '<1>'];
 	}
-	if (lc.match(/^\/?hack[?!. ]*$/)) {
+	if (lc.match(/^ ?\/?hack[?!. ]*$/)) {
 		return 'Eleite Haxxor 1337.';
 	}
 	
@@ -198,7 +201,7 @@ function checkReply(message, flags) {
 	}
 	
 	// bad words
-	if (lc.match(/(^|[^а-яё])(д(ау|ове)н|кр[ие]тин|свол[ао]ч|ид[ие]от|мраз|ло[хш]|ублюд)/)) {
+	if (lc.match(/(^|[^а-яё])[тв]ы[^а-яё]*(д(ау|ове)н|кр[ие]тин|свол[ао]ч|ид[ие]от|мраз|ло[хш]|ублюд)/)) {
 		return 'прости, но обзываться нехорошо.';
 	}
 	
@@ -218,9 +221,6 @@ function checkReply(message, flags) {
 	m = uc.match(/(Dragon2488|Archengius)/);
 	if (m) {
 		return '`' + m[0] + '` is deprecated. Use `AntiquiAvium` instead.';
-	}
-	if (lc.match(/(^|[^а-яё])драгон/)) {
-		return ['он вам не Драгон.', '#онвамнедрагон'];
 	}
 	
 	// как так?
@@ -273,11 +273,18 @@ function checkReply(message, flags) {
 	
 	// разное
 	if (lc.match(/(^|[^а-яё])нормально/)) {
-		return 'нормально или хорошо?';
+		if (timestamps.norm < now) {
+			timestamps.norm = now + 8000;
+			return 'нормально или хорошо?';
+		}
 	}
-	if (lc.match(/(^|[^а-яё])хорошо/) && chance(0.4)) {
-		return 'хорошо или замечательно?';
+	if (lc.match(/(^|[^а-яё])хорошо/) && chance(0.5)) {
+		if (timestamps.good < now) {
+			timestamps.good = now + 8000;
+			return 'хорошо или замечательно?';
+		}
 	}
+	
 	// bug
 	if (lc.match(/(^|[^а-яё])не( ?(совсем|очень) )?((правиль|коррект|вер|точ)но)? работа[еюи]т/)) {
 		message.react('🐛');
@@ -301,6 +308,9 @@ function checkReply(message, flags) {
 		try {
 			let result = eval(m[0]);
 			if (typeof result === 'number') {
+				if (floodey) {
+					flags.r = 'dm';
+				}
 				return String(parseFloat(result.toPrecision(15)));
 			}
 		} catch(e) {}
@@ -330,6 +340,13 @@ function checkReply(message, flags) {
 		return;
 	}
 	
+	// saw
+	if (!mentioned && lc.match(/(за|вы|рас|от|на|с|пере)пил[ие]/)) {
+		if (customReact(message, 'saw')) {
+			return;
+		}
+	}
+	
 	
 	
 	// следующая часть - только при упоминании
@@ -337,21 +354,25 @@ function checkReply(message, flags) {
 		return;
 	}
 	
+	// он вам не Драгон
+	if (lc.match(/(^|[^а-яё])драгон/)) {
+		return ['он вам не Драгон.', '#онвамнедрагон'];
+	}
 	
 	// short phrases
-	if (lc.match(/^ч(т|ег)о[?!. ]*$/)) {
+	if (lc.match(/^ *ч(т|ег)о[?!. ]*$/)) {
 		return 'ничего (:';
 	}
-	if (lc.match(/^как[?!. ]*$/)) {
+	if (lc.match(/^ *как[?!. ]*$/)) {
 		return 'а вот так!';
 	}
-	if (lc.match(/^test[?!. ]*$/)) {
+	if (lc.match(/^ *test[?!. ]*$/)) {
 		return 'go go test yourself!';
 	}
-	if (lc.match(/^фас([^а-яё]|$)/)) {
+	if (lc.match(/^ *фас([^а-яё]|$)/)) {
 		return 'я тебе не пёс!';
 	}
-	if (lc.match(/(^|, +|-)да[?!. ]*$/)) {
+	if (lc.match(/(^|[^а-яё])да[?!. ]*$/)) {
 		return 'на плите сковорода.';
 	}
 	
@@ -362,14 +383,14 @@ function checkReply(message, flags) {
 	}
 	
 	// monster
-	if (lc.match(/^((с|по)дохни|(го|(вы|по|у)м)ри|выпились|die|burn)/)) {
-		return 'you are a monster.';
+	if (lc.match(/^ *((с|по)дохни|(с?го|(вы|по|у)м)ри|выпились|die|burn)/)) {
+		return 'you\'re a monster.';
 	}
 	
 	// you're bad (or good, it doesn't matter)
-	m = lc.match(/^ты ([а-яё]+)/);
+	m = lc.match(/^ *ты ([а-яё]+)/);
 	if (m && m[1].match(/([ыои]й|[ая]я|[ое][её])$/)) {
-		return 'you are a monster.';
+		return 'you\'re a monster.';
 		//message.react(pick('😭 😥 😢 😕'.split(' ')));
 		//return;
 	}
@@ -393,8 +414,14 @@ function checkReply(message, flags) {
 	// drop database
 	m = lc.match(/drop\s+(database|table)/);
 	if (m) {
-		let obj = (m[1] == 'table' ? '┻━┻' : '[DATABASE]')
-		return ['(╯°д°）╯︵ ' + obj, obj + ' ︵╰(°д°╰）'];
+		flags.r = 'say';
+		let obj = (m[1] == 'table' ? '┳━┳' : '[DATABASE]');
+		let jbo = (m[1] == 'table' ? '┻━┻' : '[ꓱꓢꓯꓭꓯꓕꓯꓷ]');
+		return [
+			obj + ' ノ(˚-˚ノ)\n\n(╯°д°）╯︵ ' + jbo,
+			'(㇏˚-˚)㇏ ' + obj + '\n\n' + jbo + ' ╰(°д°╰)',
+			jbo + 'ミ㇏(ಠ益ಠ)ノ彡' + jbo,
+		];
 	}
 	
 	// ты тут?
@@ -431,7 +458,7 @@ function checkReply(message, flags) {
 	}
 	
 	// do you like
-	if (lc.match(/(^ *(ты )?любишь [а-яё]+|(^|[^а-яё])+ любишь[?! ]*$)/)) {
+	if (lc.match(/^ *((ты )?любишь [а-яё]+|[а-яё]+ любишь[?! ]*$)/)) {
 		return 'кориандр люблю.';
 	}
 	
@@ -537,6 +564,13 @@ function checkReply(message, flags) {
 		return;
 	}
 	
+	// saw
+	if (lc.match(/(за|вы|рас|от|на|с|пере)пил[ие]/)) {
+		if (customReact(message, 'saw')) {
+			return;
+		}
+	}
+	
 	// скройся/появись
 	m = lc.match(/^ *(((ворот|верн|по(каж|яв))ись)|(с(кро|мо|ле)й|спрячь)ся)[,.?! ]*/);
 	if (m) {
@@ -545,8 +579,15 @@ function checkReply(message, flags) {
 		return '';
 	}
 	
+	// :creeper:
+	if (lc.match(/(^|[^а-яё])(creep|крип)/)) {
+		if (customReact(message, 'creeper')) {
+			return;
+		}
+	}
+	
 	// если просто призвали
-	if (chance(0.4) && (!message.guild || message.channel.id === '236835572692287488')) {
+	if (chance(0.4) && (!message.guild || !floodey)) {
 		if (mentioned !== true) {
 			// если не призывали, а написали в лс
 			return;
@@ -558,7 +599,7 @@ function checkReply(message, flags) {
 			'зачем звал?',
 			'ку-ку.',
 			'привет.',
-			'да ладно, перестань. Всё равно я ещё мало чего умею.',
+			'да ладно, можешь не призывать. Всё равно я ещё мало чего умею.',
 		];
 	} else {
 		message.react(pick('👋 🖐 😑 😐 😁 🙃 🙄 😓 😪 😷 😶 🍌 📯 🎺 🏸'.split(' ')));
@@ -631,8 +672,8 @@ clientMusic.connect({token: myToken});
 clientMusic.Dispatcher.on("GATEWAY_READY", e => {
 	clientMusic.User.setStatus('invisible');
 	console.log('Discordie is ready!');
-	console.log("Connected as: " + clientMusic.User.username);
-	clientMusic.Channels.get("315439572710326284").join(false, false);
+	//console.log("Connected as: " + clientMusic.User.username);
+	//clientMusic.Channels.get("315439572710326284").join(false, false);
 });
 
 clientMusic.Dispatcher.on("MESSAGE_CREATE", (e) => {
