@@ -419,7 +419,7 @@ function checkReply(message, flags) {
 		let jbo = (m[1] == 'table' ? '┻━┻' : '[ꓱꓢꓯꓭꓯꓕꓯꓷ]');
 		return [
 			obj + ' ノ(˚-˚ノ)\n\n(╯°д°）╯︵ ' + jbo,
-			'(㇏˚-˚)㇏ ' + obj + '\n\n' + jbo + ' ╰(°д°╰)',
+			'(㇏˚-˚)㇏ ' + obj + '\n\n' + jbo + '︵ ╰(°д°╰)',
 			jbo + 'ミ㇏(ಠ益ಠ)ノ彡' + jbo,
 		];
 	}
@@ -662,9 +662,6 @@ client.login(myToken);
 // discord.js не смог в FFMPEG, так что музыка через Discordie.
 
 const Discordie = require('discordie');
-const dl = require('youtube-dl');
-const https = require('https');
-
 var clientMusic = new Discordie({autoReconnect: true});
 
 clientMusic.connect({token: myToken});
@@ -814,6 +811,9 @@ let mus = {
 };
 
 let musMsgLifespan = 5000;
+
+const dl = require('youtube-dl');
+const https = require('https');
 
 // удаление сообщений через время
 function autoRemove(message) {
