@@ -659,18 +659,19 @@ client.login(myToken);
 
 
 // Модуль для проигрывания музыки
-// discord.js не смог в FFMPEG, так что музыка через Discordie.
+// discord.js не смог, так что музыка через Discordie.
 
 const Discordie = require('discordie');
 var clientMusic = new Discordie({autoReconnect: true});
+var debugMusic = true;
 
 clientMusic.connect({token: myToken});
 
 clientMusic.Dispatcher.on("GATEWAY_READY", e => {
 	clientMusic.User.setStatus('invisible');
 	console.log('Discordie is ready!');
-	//console.log("Connected as: " + clientMusic.User.username);
-	//clientMusic.Channels.get("315439572710326284").join(false, false);
+	console.log("Connected as: " + clientMusic.User.username);
+	clientMusic.Channels.get("315439572710326284").join(false, false);
 });
 
 clientMusic.Dispatcher.on("MESSAGE_CREATE", (e) => {
@@ -695,12 +696,14 @@ clientMusic.Dispatcher.on("MESSAGE_CREATE", (e) => {
 		
 		let vch = guild.voiceChannels.find(c => c.id == mus[guild.id].vid);
 		
-		if (content == 'stop') {
+		// debug test
+		if (debugMusic && content == 'stop') {
 			vch.leave();
+			autoRemove(message);
 			return;
 		}
 		
-		if (content == 'join') {
+		if (debugMusic && content == 'join') {
 			console.log('Started!!!');
 			let vch = guild.voiceChannels.find(c => c.id == mus[guild.id].vid);
 			vch.join(false, false).then((c) => {
@@ -716,10 +719,11 @@ clientMusic.Dispatcher.on("MESSAGE_CREATE", (e) => {
 					vch.leave();
 				});
 			});
+			autoRemove(message);
 			return;
 		}
 		
-		if (content == 'deaf') {
+		if (debugMusic && content == 'deaf') {
 			console.log('Started!!!');
 			let vch = guild.voiceChannels.find(c => c.id == mus[guild.id].vid);
 			vch.join(false, true).then((c) => {
@@ -735,10 +739,11 @@ clientMusic.Dispatcher.on("MESSAGE_CREATE", (e) => {
 					vch.leave();
 				});
 			});
+			autoRemove(message);
 			return;
 		}
 		
-		if (content[0] == '$') {
+		if (debugMusic && content[0] == '$') {
 			console.log('Started!!!');
 			vch.join(false, false).then((c) => {
 				try {
@@ -767,20 +772,15 @@ clientMusic.Dispatcher.on("MESSAGE_CREATE", (e) => {
 					vch.leave();
 				}
 			});
+			autoRemove(message);
 			return;
 		}
 		
 		// test
-		if (message.content == '%') {
-			const cmus = mus[message.guild.id];
-			console.log("% start");
-			let vch = message.guild.voiceChannels.find(c => c.id == cmus.vid);
-			vch.join(false, false).then((c) => {
-				console.log("% done");
-				if (!cmus.adding && !cmus.c) {
-					vch.leave();
-				}
-			}).catch(console.error);
+		if (message.content == '%%%') {
+			debugMusic = false;
+			autoRemove(message);
+			return;
 		}
 		
 		// обработка сообщения
@@ -871,7 +871,8 @@ function musicProcess(message) {
 	
 	// skip
 	if (uc == '-') {
-		ret(cmus, 'Скип пока что ещё не готов, потом доделаю.');
+		//ret(cmus, 'Скип пока что ещё не готов, потом доделаю.');
+		musicSkip(message);
 		return;
 	}
 	
@@ -884,9 +885,45 @@ function musicProcess(message) {
 	}
 	
 	// stop
-	if (uc == 'kick') {
+	if (musicDebug && uc == 'kick') {
 		musicStop(cmus);
 		return;
+	}
+}
+
+function musicSkip(message) {
+	let cmus = mus[message.guild.id];
+	
+	if (!cmus.c || !cmus.curr) {
+		return ret(cmus, 'Пропускать нечего, и так там ничего не играет.');
+	}
+	
+	if (!cmus.vch.members.find(c => c.id == message.author.id)) {
+		return ret(cmus, 'Эй, похоже, ты не слушаешь музыку. Зайди в голосовой канал `' + cmus.vch.name + '`.');
+	}
+	
+	let already = cmus.skip.indexOf(message.author.id) != -1;
+	if (!already) {
+		cmus.skip.push(message.author.id);
+	}
+	
+	cmus.users = cmus.vch.members.length;
+	let need = Math.floor(cmus.users / 2);
+	let len = cmus.skip.length;
+	
+	if (len >= need) {
+		ret(cmus, 'Музыка скипнута.');
+		if (cmus.e) {
+			cmus.e.stop();
+		}
+		// event will be dispatched
+	} else {
+		if (already) {
+			ret(cmus, 'Уже проголосовано. Попроси других пропустить (если они не против).');
+		} else {
+			ret(cmus, 'Голос учтён (' + len + ' / ' + need + ').');
+		}
+		musicUpdate(cmus);
 	}
 }
 
@@ -1021,6 +1058,7 @@ function musicRejoin(cmus) {
 		cmus.vch.join(false, false).then(c => {
 			console.log('Rejoined.');
 			cmus.c = c.voiceConnection;
+			cmus.users = cmus.vch.members.length;
 			try {
 				musicPlay(cmus);
 				console.log('Set to play.');
@@ -1047,6 +1085,7 @@ function musicPlay(cmus) {
 	}
 	
 	cmus.curr = cmus.list.shift();
+	cmus.skip = [];
 	console.log('> [https://youtu.be/' + cmus.curr.url + ']');
 	
 	dl.getInfo('https://www.youtube.com/watch?v=' + cmus.curr.url, ['--skip-download'], function (err, info) {
@@ -1075,10 +1114,12 @@ function musicConnect(cmus, info) {
 	ret(cmus, 'Сейчас играет музыка "' + info.title + '"');
 	encoder.once('end', () => {
 		console.log('Music ended.');
+		cmus.curr = null;
 		musicPlay(cmus);
 	});
 	encoder.on('error', (e) => {
 		console.log('Encoder error: ' + e);
+		cmus.curr = null;
 		musicPlay(cmus);
 	});
 }
