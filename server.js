@@ -305,7 +305,7 @@ let responses = [
 	// решение примеров
 	{
 		p: /(^| )[ ()0-9.*\/+-]*[0-9][ ()0-9.*\/+-]*[*\/+-][ ()0-9.*\/+-]*[0-9][()0-9.*\/+-]*/g,
-		r: (m) => {
+		r: (m, flags, floodey) => {
 			if (m.length == 1) {
 				try {
 					let result = eval(m[0]); // eval = evil
@@ -514,7 +514,7 @@ let responses = [
 	{
 		d: true,
 		p: /(^|[^а-яё])(знаешь|[чк]то (за|так(ой|ая|ое)))/i,
-		r: (m, message) => {
+		r: (m, flags, floodey, message) => {
 			let known = {
 				'(руль?т|rult)': () => {
 					return customReact(message, 'rult');
@@ -603,7 +603,7 @@ let responses = [
 	// :creeper:
 	{
 		p: /(^|[^а-яё])(creep|крип)/i,
-		r: (m, message) => {
+		r: (m, flags, floodey, message) => {
 			if (customReact(message, 'creeper')) {
 				return true;
 			}
@@ -620,7 +620,7 @@ let responses = [
 	// :saw:
 	{
 		p: /(за|вы|рас|от|на|с|пере)?пил[ие]/i,
-		r: (m, message) => {
+		r: (m, flags, floodey, message) => {
 			if (customReact(message, 'saw')) {
 				return true;
 			}
@@ -650,7 +650,7 @@ let responses = [
 	{
 		d: true,
 		p: /^/,
-		r: (m, message, floodey, mentioned) => {
+		r: (m, flags, floodey, message, mentioned) => {
 			if (chance(0.4) && (!message.guild || !floodey)) {
 				if (mentioned !== true) {
 					// если не призывали, а написали в лс
@@ -759,7 +759,7 @@ function checkReply(message, flags) {
 		
 		// exec if function
 		if (typeof resp === 'function') {
-			resp = resp(m, message, floodey, mentioned);
+			resp = resp(m, flags, floodey, message, mentioned);
 		}
 		
 		if (!resp) {
