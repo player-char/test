@@ -719,14 +719,14 @@ function checkReply(message, flags) {
 	// <@...> mentioning
 	m = lc.match('<@' + myId + '>[,.?! ]*');
 	if (m) {
-		lc = cutOff(m);
+		lc = cutOff(m, lc);
 	}
 	
 	// text name mentioning
 	m = lc.match(/([,.?!] *|^)(крип(ушка|ак?|ер(аст)?)|creep(er|ah))([,.?!] *|$)/i);
 	if (m) {
 		mentioned = true;
-		lc = cutOff(m);
+		lc = cutOff(m, lc);
 	}
 	
 	// проверка по базе
@@ -755,7 +755,7 @@ function checkReply(message, flags) {
 		
 		// exec if function
 		if (typeof resp === 'function') {
-			resp = resp(found, message, floodey);
+			resp = resp(m, message, floodey);
 		}
 		
 		if (!resp) {
