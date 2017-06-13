@@ -746,6 +746,10 @@ function checkReply(message, flags) {
 		
 		let m = lc.match(item.p);
 		
+		if (!m) {
+			continue;
+		}
+		
 		// indirect
 		if (item.d === 'indirect' && !mentioned && m[0].length != lc.length) {
 			continue;
