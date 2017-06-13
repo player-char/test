@@ -613,7 +613,7 @@ let responses = [
 	// :banana:
 	{
 		p: /банан/i,
-		m: react,
+		m: 'react',
 		r: '🍌',
 	},
 	
@@ -630,7 +630,7 @@ let responses = [
 	// the love is a lie, if you love you soon will cry.
 	{
 		p: /(^|[^е])(^|[^а-яё])люблю/i,
-		m: react,
+		m: 'react',
 		r: '🤥',
 	},
 	
@@ -768,7 +768,10 @@ function checkReply(message, flags) {
 		}
 		
 		// method
-		flags.r = item.m;
+		if (item.m) {
+			flags.r = item.m;
+		}
+		
 		return resp;
 	}
 }
