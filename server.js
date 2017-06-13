@@ -323,7 +323,7 @@ let responses = [
 	// gimme
 	{
 		p: /(?:^|[^а-яё])(?:вы)?дай(?:те)?(?: мне)? +([0-9]*)(?: штуки? )? *([0-9а-яёa-z '"&-]*)/i,
-		r: (m) => {
+		r: (m, flags, floodey, message) => {
 			let count = m[1] ? +m[1] : 64;
 			let item = m[2].trim().toUpperCase();
 			if (item.length <= 32 && item.length >= 2) {
