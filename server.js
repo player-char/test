@@ -175,7 +175,7 @@ let responses = [
 	},
 	// bad words
 	{
-		p: /(^|[^а-яё])[тв]ы[^а-яё]*(д(ау|ове)н|кр[ие]тин|свол[ао]ч|ид[ие]от|мраз|ло[хш]|ублюд|дур[аоеё]|д[еи]б[еи]л|)/i,
+		p: /(^|[^а-яё])[тв]ы[^а-яё]*(д(ау|ове)н|кр[ие]тин|свол[ао]ч|ид[ие]от|мраз|ло[хш]|ублюд|дур[аоеё]|д[еи]б[еи]л)/i,
 		r: 'прости, но обзываться нехорошо.',
 	},
 	// dog words
@@ -539,7 +539,7 @@ let responses = [
 				'(рутс?чи|rutschi)': 'а, это тот, кто на совках тащит.',
 				'(гетап|getup)': () => {
 					if (chance(0.4) && customReact(message, 'orangeCaster')) {
-						return;
+						return true;
 					}
 					return 'Гетап - каститизатор Земель Рандомских.';
 				},
@@ -650,7 +650,7 @@ let responses = [
 	{
 		d: true,
 		p: /^/,
-		r: (m, message, floodey) => {
+		r: (m, message, floodey, mentioned) => {
 			if (chance(0.4) && (!message.guild || !floodey)) {
 				if (mentioned !== true) {
 					// если не призывали, а написали в лс
@@ -759,7 +759,7 @@ function checkReply(message, flags) {
 		
 		// exec if function
 		if (typeof resp === 'function') {
-			resp = resp(m, message, floodey);
+			resp = resp(m, message, floodey, mentioned);
 		}
 		
 		if (!resp) {
