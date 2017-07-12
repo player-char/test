@@ -1045,23 +1045,24 @@ function capReply(message, text, flags) {
 		text = text.slice(0, 1).toUpperCase() + text.slice(1);
 	}
 	
-	let f = {
-		'reply': message.reply, // reply w/ @mention
-		'say': message.channel.send, // just say
-		'dm': message.author.send, // force private conversation
-		'react': message.react, // put a reaction instead
-	}[flags.r];
+	let opt;
+	if (attach) {
+		opt = {files: attach};
+	}
 	
-	if (!f) {
+	let f = {
+		'reply': () => message.reply(text, opt), // reply w/ @mention
+		'say': () => message.channel.send(text, opt), // just say
+		'dm': () => message.author.send(text, opt), // force private conversation
+		'react': () => message.react(text, opt), // put a reaction instead
+	};
+	
+	if (!f[flags.r]) {
 		console.log('Unknown reply type:', flags.r);
 		return;
 	}
 	
-	if (attach) {
-		f(text, {files: attach});
-	} else {
-		f(text);
-	}
+	f[flags.r]();
 }
 
 // чем отвечать будем
