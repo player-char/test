@@ -221,7 +221,7 @@ let responses = [
 	},
 	// bad words
 	{
-		p: /(^|[^а-яё"'])[тв]ы[^а-яё]*(д(ау|ове)н|кр[ие]тин|свол[ао]ч|ид[ие]от|мраз|ло[хш]|ублюд|дур[аоеё]|д[еи]б[еи]л)/i,
+		p: /(^|[^а-яё"'`])[тв]ы[^а-яё]*(д(ау|ове)н|кр[ие]тин|свол[ао]ч|ид[ие]от|мраз|ло[хш]|ублюд|дур[аоеё]|д[еи]б[еи]л)/i,
 		r: 'прости, но обзываться нехорошо.',
 	},
 	// dog words
@@ -237,13 +237,14 @@ let responses = [
 	},
 	// aster*xx
 	{
-		p: /(^|[а-яё .,!?_-])\\?\*[а-яё]|[а-яё]\\?\*([а-яё .,!?_-]|$)/i,
+		p: /(^|[а-яёa-z0-9 -?@`\[-\]^_{-~])\\?\*[а-яёa-z]|[а-яёa-z]\\?\*([а-яёa-z0-9 -?@`\[-\]^_{-~]|$)/i,
+		m: 'dm',
 		r: (m) => {
 			let t = m.input;
 			t = t.replace(/(^|[^\\])\*\*(?=\S)(.*?\S)\*\*/ig, '$1$2');
 			t = t.replace(/(^|[^\\])\*(?=\S)(.*?\S)\*/ig, '$1$2');
-			console.log(m.input, '->', t);
-			if (t.match(/(^|[а-яё .,!?_-])\\?\*[а-яё]|[а-яё]\\?\*([а-яё .,!?_-]|$)/i)) {
+			//console.log(m.input, '->', t);
+			if (t.match(/(^|[а-яёa-z0-9 -?@`\[-\]^_{-~])\\?\*[а-яёa-z]|[а-яёa-z]\\?\*([а-яёa-z0-9 -?@`\[-\]^_{-~]|$)/i)) {
 				return 'Закрывать мат звёздочкой всё равно что отсасывать на красной площади, прикрываясь ладонью. (c) Godzii';
 			}
 		},
@@ -530,6 +531,48 @@ let responses = [
 		],
 	},
 	
+	// скинь фотку
+	{
+		d: true,
+		p: /(^|[^а-яё])(скинь|(дай|можно|изволь) (посмотреть|увидеть|глянуть)) ((рандомну|[ст]во)[юеё] )?фот(о|ку|ографию)/i,
+		m: 'dm',
+		r: () => https.get('https://www.google.com/search?tbm=isch&q=minecraft+creeper' + ['', '+png', '+photo', '+screenshot', '+cute', '+dance', '+jpg'].pick(), response => {
+			console.log('Search results started...');
+			let data = '';
+			
+			response.on('data', part => {
+				data += part;
+			});
+			
+			response.on('end', () => {
+				console.log('Search results ended...');
+				if (+(response.statusCode) != 200) {
+					return 'Поиск провалился. Сервера ответ: ' + response.statusCode;
+				}
+				let pos = -1;
+				let arr = [];
+				while ((pos = data.indexOf(':","data:image/', pos + 1)) != -1) {
+					arr.push(pos);
+				}
+				if (!arr.length) {
+					return 'Ничего не нашлось!';
+				}
+				pos = arr.pick() + 4;
+				let end = data.indexOf('"', pos + 1);
+				let base = data.slice(pos, end);
+				base = JSON.parse('"' + base + '"');
+				console.log('Base64: ' + base);
+				return {text: 'держи:', files: [base]};
+			});
+			
+			response.on('error', err => {
+				console.log('Can\'t load search results: ');
+				console.error(err);
+				return 'Упс, во время поиска что-то оборвалось.';
+			});
+		}),
+	},
+	
 	// как настроение?
 	{
 		d: true,
@@ -592,7 +635,7 @@ let responses = [
 	// на чём написан?
 	{
 		d: true,
-		p: /(^|[^а-яё])(на|в) чём ты написан[?! ]*$/i,
+		p: /(^|[^а-яё])(на|в) чём (ты )?написан[?! ]*$/i,
 		r: 'на компьютере написан, на компьютере.',
 	},
 	// блокнот?
@@ -600,6 +643,19 @@ let responses = [
 		d: true,
 		p: /(^|[^а-яё])(на|в) каком редакторе ты написан[?! ]*$/i,
 		r: (m) => m[2].toLowerCase() + ' Notepad++.',
+	},
+	
+	// профессия?
+	{
+		d: true,
+		p: /(^|[^а-яё])(кем (ты )?работаешь|какая (у тебя )?(профессия|работа|должность))[?! ]*$/i,
+		r: 'Floodey bot.',
+	},
+	// зарплата?
+	{
+		d: true,
+		p: /(^|[^а-яё])(сколько (тебе )?платят( тебе)?|какая (у тебя )?зарплата)( на (твоей )?работе)?[?! ]*$/i,
+		r: 'платят мне от 100 000 до 2 000 000 миллисообщений в месяц.',
 	},
 	
 	// смысл жизни
@@ -795,6 +851,20 @@ let responses = [
 		r: '🍌',
 	},
 	
+	// :пингвин:
+	{
+		p: /пингви/i,
+		m: 'react',
+		r: '🐧',
+	},
+	
+	// :пинг:
+	{
+		p: /п[ио]нг/i,
+		m: 'react',
+		r: '🏓',
+	},
+	
 	// ignored
 	{
 		d: true,
@@ -805,7 +875,7 @@ let responses = [
 	
 	// :saw:
 	{
-		p: /(за|вы|рас|от|на|с|пере)?пил[ие]/i,
+		p: /(за|вы|рас|от|на|с|пере)?пил[иею]/i,
 		r: (m, flags, floodey, message) => {
 			if (customReact(message, 'saw')) {
 				return true;
@@ -851,7 +921,7 @@ let responses = [
 	
 	// honeywasp
 	{
-		p: /(^|[^а-яё])жал(ь|ко)([^а-яё]|$)/i,
+		p: /(^|[^а-яё])(у|за|по|из)?жал(ь|ко)([^а-яё]|$)/i,
 		m: 'react',
 		r: '🐝',
 	},
@@ -881,6 +951,27 @@ let responses = [
 		r: (m) => {
 			hidden = !m[2];
 			setStatus();
+			return true;
+		},
+	},
+	
+	// debug info
+	{
+		d: true,
+		p: /^ *(слей инфу|дебаг)( в лс)?[!. ]*$/i,
+		r: (m) => {
+			let t = 'слив инфы о работе (за данный сеанс):';
+			
+			t += 'Я онлайн уже ' + dateDiff(since, +now) + '.\n';
+			t += 'Время на моих часах при запуске: \n`' + new Date(since) + '`.\n';
+			t += 'Время на моих часах сейчас: \n`' + now + '`.';
+			
+			t += 'Запросов всего: `' + stat.uses + '`.';
+			t += 'Запросов из лс: `' + stat.usesdm + '`.';
+			t += 'Среднее время отклика: `' + (stat.times / stat.uses) + ' мс`.';
+			t += 'Последнее время отклика: `' + stat.ltime + ' мс`.';
+			t += 'Шишек набито при ответе: `' + stat.errors + '`.';
+			
 			return true;
 		},
 	},
@@ -931,6 +1022,12 @@ let responses = [
 
 // капитализация и отправка
 function capReply(message, text, flags) {
+	let attach = null;
+	if (text.files && typeof text.text == 'string') {
+		attach = text.files;
+		text = text.text;
+	}
+	
 	if (Array.isArray(text)) {
 		//if (Array.isArray(text[0])) {
 		//	// set flag in array
@@ -948,17 +1045,22 @@ function capReply(message, text, flags) {
 		text = text.slice(0, 1).toUpperCase() + text.slice(1);
 	}
 	
-	switch (flags.r) {
-		case 'reply': // reply w/ @mention
-		return message.reply(text);
-		case 'say': // just say
-		return message.channel.send(text);
-		case 'dm': // force private conversation
-		return message.author.send(text);
-		case 'react': // put a reaction instead
-		return message.react(text);
-		default: // error
+	let f = {
+		'reply': message.reply, // reply w/ @mention
+		'say': message.channel.send, // just say
+		'dm': message.author.send, // force private conversation
+		'react': message.react, // put a reaction instead
+	}[flags.r];
+	
+	if (!f) {
 		console.log('Unknown reply type:', flags.r);
+		return;
+	}
+	
+	if (attach) {
+		f(text, {files: attach});
+	} else {
+		f(text);
 	}
 }
 
@@ -1032,7 +1134,12 @@ function checkReply(message, flags) {
 			flags.r = item.m;
 		}
 		
-		return resp;
+		if (typeof resp.then == 'function') {
+			resp.then((resp) => capReply(message, resp, flags));
+		} else {
+			capReply(message, resp, flags);
+		}
+		return;
 	}
 }
 
@@ -1042,7 +1149,7 @@ function processMessage(message) {
 			r: 'reply', // reply with mentioning by default
 		};
 		// крипера ответ
-		capReply(message, checkReply(message, flags), flags);
+		checkReply(message, flags);
 
 	} catch(e) {
 		console.error(e);
