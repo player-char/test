@@ -565,7 +565,7 @@ let responses = [
 				let base = data.slice(pos, end);
 				base = JSON.parse('"' + base + '"');
 				console.log('Base64: ' + base);
-				resolve({text: 'держи:', files: [base]});
+				resolve({text: 'держи:', files: [{attachment: base}]});
 			});
 			
 			response.on('error', err => {
@@ -580,21 +580,21 @@ let responses = [
 		d: true,
 		p: /(^|[^а-яё])(скинь|(дай|можно|изволь) (посмотреть|увидеть|глянуть)) (эмблему|лого(тип)?) хаоскрафта?([^а-яё]|$)/i,
 		m: 'dm',
-		r: {text: 'держи:', files: ['data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACABAMAAAAxEHz4AAAAG1BMVEVHcEz/yQ5/f3//fyfDw8P/8gDtHCQ/SMwisUyktfiCAAAAAXRSTlMAQObYZgAABGlJREFUeF7M1EGOnEAMBdBUTsAfi31CcoA4X3OAibgAGtX9rxJhu6zqFjQ0vUjYdCPhx7erii//91XwIoB/DZRXAXQAhksB0P1/FbgQAeiqAFwBrveQwK+8w3AFELaycg0AkQCuAYoXAepwdSGLD0FxASjIKZIYGvfsMSwOKK4AQ9SAonkzXAMIvASAdlcI4CKgVwE4IAq8BjCA80Mo3nUAPgRQnwVwBxDAMwASoGIoYPZwHARYKxIQBTqgnAHykgDgAM4Domg/Qgf0KYABUGM708jhEMhT2AOhnAVaxwkI26EATgClB9gD3gOOAHQdgJIAJIHzAXpAhQkcB8gRiLY+1IdQzgDMDtQACUAdwPEaJoAO8FZwAPgEiQawA3AERABScgSgDYIB6CFg9fmgqJc6g4QfBhAqMoB24yNS3l8Gr3cgs1AhDqgcACV2ACNA24MBiB714FuwPUaL7gAdaFv0YT2ZnyCXIgU1FwLDbgPaJuf/NQGF+ERd2AugYNS18aGCxgUAUvci+NTodRKdBwBCsrUdoIAq1BFgF2BMAA6EsBOARPWHM0ADNAGhbkawABgrPAkgFqAuBogBiwubEYrv1LoCJONFdQvANiC0ALVNmrQAtQYgFK0ObPbgy1QNaEtQaw+oaM0eNgCq6OhALMHYAxTlewDYAAoI0WqAB7D6BEAqx5o9bAPvAXiAegfICkQPj4AF1AzQAWoBXRA+AoQANes/DZAAoolHQHzAawIaoQNYjgA/uuMuUI8BgPcAeApgAqh50QFkrN0hKhgzlBsAt8BiDW1uZfB9BWwEh8DbdFP+dYKoDQF3wGcP5CKswPStK58mWHQFZHMRDECeBazA1NdP30GADCBnsNABdQQJrDVd/c/5A1TgHljgVcYkIHyb7oB5nr2BBoxR3wD2AH+v7/xzm2D+yE+ZBfbyyC20eNoC2Cs74I8JeCNJKrtuo4gqREZcA8w3wGzCB6bph6doQHYwCQlEQv5trwyOGoaBKFoDQwc7aoCECjQaaIRJCzTAgbLx6ge9iZK1Zn2FPdp+T3+/DjYrk8ANWwTrc/0rs7tn9mhaz/l7QfOtqtNbit4iq/fMitZD2ENB84e20du3o4QrL+bZFfBTB6VVPbbzqe9AC867/6kbTuJngVk3KIkiyKDMTeMs/HwLqqGpiBddmfjxvUa6uQPDYJ6UW3ht8FI9EgxD8efnMfA6OhRwj0VnrfjoFuqoQRPFj28BqCGwmQ9uoY4uGEz7Arh63zV8LAgN8/pxiTeG3fjwtyVyspgwPmoETuvk76/+rhB/wUtgxdzQBdRge+vPvxXllkAG1g95xjC0t8vv8uv4DCVK0BK8tpABQVvGvze0CoNgwTMm4vLRNCywjE8NgWDJU0MgWManhm3ePxEkeGpAsIgf1IAgx1MDHWTiY0CQ46kBQS4+NSDI8tSAgPgJA4I8Tw1W8vGpAUGSpwYJKnzSIMG0fq4GK4d4arBC/ENLGPwxA/GPDfzRgf8D8z8/jt+11sKG/zkAAAAASUVORK5CYII=']},
+		r: {text: 'держи:', files: [{attachment: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACABAMAAAAxEHz4AAAAG1BMVEVHcEz/yQ5/f3//fyfDw8P/8gDtHCQ/SMwisUyktfiCAAAAAXRSTlMAQObYZgAABGlJREFUeF7M1EGOnEAMBdBUTsAfi31CcoA4X3OAibgAGtX9rxJhu6zqFjQ0vUjYdCPhx7erii//91XwIoB/DZRXAXQAhksB0P1/FbgQAeiqAFwBrveQwK+8w3AFELaycg0AkQCuAYoXAepwdSGLD0FxASjIKZIYGvfsMSwOKK4AQ9SAonkzXAMIvASAdlcI4CKgVwE4IAq8BjCA80Mo3nUAPgRQnwVwBxDAMwASoGIoYPZwHARYKxIQBTqgnAHykgDgAM4Domg/Qgf0KYABUGM708jhEMhT2AOhnAVaxwkI26EATgClB9gD3gOOAHQdgJIAJIHzAXpAhQkcB8gRiLY+1IdQzgDMDtQACUAdwPEaJoAO8FZwAPgEiQawA3AERABScgSgDYIB6CFg9fmgqJc6g4QfBhAqMoB24yNS3l8Gr3cgs1AhDqgcACV2ACNA24MBiB714FuwPUaL7gAdaFv0YT2ZnyCXIgU1FwLDbgPaJuf/NQGF+ERd2AugYNS18aGCxgUAUvci+NTodRKdBwBCsrUdoIAq1BFgF2BMAA6EsBOARPWHM0ADNAGhbkawABgrPAkgFqAuBogBiwubEYrv1LoCJONFdQvANiC0ALVNmrQAtQYgFK0ObPbgy1QNaEtQaw+oaM0eNgCq6OhALMHYAxTlewDYAAoI0WqAB7D6BEAqx5o9bAPvAXiAegfICkQPj4AF1AzQAWoBXRA+AoQANes/DZAAoolHQHzAawIaoQNYjgA/uuMuUI8BgPcAeApgAqh50QFkrN0hKhgzlBsAt8BiDW1uZfB9BWwEh8DbdFP+dYKoDQF3wGcP5CKswPStK58mWHQFZHMRDECeBazA1NdP30GADCBnsNABdQQJrDVd/c/5A1TgHljgVcYkIHyb7oB5nr2BBoxR3wD2AH+v7/xzm2D+yE+ZBfbyyC20eNoC2Cs74I8JeCNJKrtuo4gqREZcA8w3wGzCB6bph6doQHYwCQlEQv5trwyOGoaBKFoDQwc7aoCECjQaaIRJCzTAgbLx6ge9iZK1Zn2FPdp+T3+/DjYrk8ANWwTrc/0rs7tn9mhaz/l7QfOtqtNbit4iq/fMitZD2ENB84e20du3o4QrL+bZFfBTB6VVPbbzqe9AC867/6kbTuJngVk3KIkiyKDMTeMs/HwLqqGpiBddmfjxvUa6uQPDYJ6UW3ht8FI9EgxD8efnMfA6OhRwj0VnrfjoFuqoQRPFj28BqCGwmQ9uoY4uGEz7Arh63zV8LAgN8/pxiTeG3fjwtyVyspgwPmoETuvk76/+rhB/wUtgxdzQBdRge+vPvxXllkAG1g95xjC0t8vv8uv4DCVK0BK8tpABQVvGvze0CoNgwTMm4vLRNCywjE8NgWDJU0MgWManhm3ePxEkeGpAsIgf1IAgx1MDHWTiY0CQ46kBQS4+NSDI8tSAgPgJA4I8Tw1W8vGpAUGSpwYJKnzSIMG0fq4GK4d4arBC/ENLGPwxA/GPDfzRgf8D8z8/jt+11sKG/zkAAAAASUVORK5CYII='}]},
 	},
 	// скинь скрин
 	{
 		d: true,
 		p: /(^|[^а-яё])(скинь|(дай|можно|изволь) (посмотреть|увидеть|глянуть)) скрин(шот)?([^а-яё]|$)/i,
 		m: 'dm',
-		r: {text: 'держи:', files: ['http://i.imgur.com/xVUZdmX.jpg']},
+		r: {text: 'держи:', files: [{attachment: 'http://i.imgur.com/xVUZdmX.jpg'}]},
 	},
 	// скинь имг
 	{
 		d: true,
 		p: /(^|[^а-яё])(скинь|(дай|можно|изволь) (посмотреть|увидеть|глянуть)) имг([^а-яё]|$)/i,
 		m: 'dm',
-		r: {text: 'держи:', files: ['http://i.imgur.com/EtYNSfz.png']},
+		r: {text: 'держи:', files: [{attachment: 'http://i.imgur.com/EtYNSfz.png'}]},
 	},
 	
 	// как настроение?
