@@ -536,7 +536,8 @@ let responses = [
 		d: true,
 		p: /(^|[^а-яё])(скинь|(дай|можно|изволь) (посмотреть|увидеть|глянуть)) ((рандомну|[ст]во)[юеё] )?фот(о|ку|ографию)/i,
 		m: 'dm',
-		r: () => https.get('https://www.google.com/search?tbm=isch&q=minecraft+creeper' + ['', '+png', '+photo', '+screenshot', '+cute', '+dance', '+jpg'].pick(), response => {
+		r: () => new Promise((resolve) => https.get('https://www.google.com/search?tbm=isch&q=minecraft+creeper'
+		+ ['', '+png', '+photo', '+screenshot', '+cute', '+dance', '+jpg'].pick(), response => {
 			console.log('Search results started...');
 			let data = '';
 			
@@ -547,7 +548,8 @@ let responses = [
 			response.on('end', () => {
 				console.log('Search results ended...');
 				if (+(response.statusCode) != 200) {
-					return 'Поиск провалился. Сервера ответ: ' + response.statusCode;
+					console.log('Search Failed,', response.statusCode);
+					resolve('Поиск провалился. Сервера ответ: ' + response.statusCode);
 				}
 				let pos = -1;
 				let arr = [];
@@ -555,22 +557,23 @@ let responses = [
 					arr.push(pos);
 				}
 				if (!arr.length) {
-					return 'Ничего не нашлось!';
+					console.log('Nothing found!', data);
+					resolve('Ничего не нашлось!');
 				}
 				pos = arr.pick() + 4;
 				let end = data.indexOf('"', pos + 1);
 				let base = data.slice(pos, end);
 				base = JSON.parse('"' + base + '"');
 				console.log('Base64: ' + base);
-				return {text: 'держи:', files: [base]};
+				resolve({text: 'держи:', files: [base]});
 			});
 			
 			response.on('error', err => {
 				console.log('Can\'t load search results: ');
 				console.error(err);
-				return 'Упс, во время поиска что-то оборвалось.';
+				resolve('Упс, во время поиска что-то оборвалось.');
 			});
-		}),
+		})),
 	},
 	
 	// как настроение?
@@ -921,7 +924,7 @@ let responses = [
 	
 	// honeywasp
 	{
-		p: /(^|[^а-яё])(у|за|по|из)?жал(ь|ко)([^а-яё]|$)/i,
+		p: /(^|[^а-яёa-z])((у|за|по|из)?жал(ь|ко)|осу|osu)([^а-яёa-z]|$)/i,
 		m: 'react',
 		r: '🐝',
 	},
