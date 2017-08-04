@@ -1,6 +1,6 @@
 // Дискорд-бот "Крипушка"
 
-
+(function() {
 var Discord = require('discord.js');
 var client = new Discord.Client();
 
@@ -1424,93 +1424,6 @@ clientMusic.Dispatcher.on("MESSAGE_CREATE", (e) => {
 		
 		let vch = guild.voiceChannels.find(c => c.id == mus[guild.id].vid);
 		
-		// debug test
-		if (debugMusic && content == 'stop') {
-			vch.leave();
-			autoRemove(message);
-			return;
-		}
-		
-		if (debugMusic && content == 'join') {
-			console.log('Started!!!');
-			let vch = guild.voiceChannels.find(c => c.id == mus[guild.id].vid);
-			vch.join(false, false).then((c) => {
-				console.log('Joined!!!');
-				var encoder = c.voiceConnection.createExternalEncoder({
-					type: 'ffmpeg',
-					format: 'mp3',
-					source: 'https://saxifra.ga/123.mp3',
-				});
-				encoder.play();
-				encoder.once('end', () => {
-					console.log('Left!!!');
-					vch.leave();
-				});
-			});
-			autoRemove(message);
-			return;
-		}
-		
-		if (debugMusic && content == 'deaf') {
-			console.log('Started!!!');
-			let vch = guild.voiceChannels.find(c => c.id == mus[guild.id].vid);
-			vch.join(false, true).then((c) => {
-				console.log('Joined!!!');
-				var encoder = c.voiceConnection.createExternalEncoder({
-					type: 'ffmpeg',
-					format: 'mp3',
-					source: 'https://saxifra.ga/123.mp3',
-				});
-				encoder.play();
-				encoder.once('end', () => {
-					console.log('Left!!!');
-					vch.leave();
-				});
-			});
-			autoRemove(message);
-			return;
-		}
-		
-		if (debugMusic && content[0] == '$') {
-			console.log('Started!!!');
-			vch.join(false, false).then((c) => {
-				try {
-					console.log('Joined!');
-					dl.getInfo(content.slice(1), ['--skip-download'], function (err, info) {
-						if (err) {
-							console.error(err);
-						} else if (info) {
-							console.log(info.url);
-							var encoder = c.voiceConnection.createExternalEncoder({
-								type: 'ffmpeg',
-								format: 'pcm',
-								source: info.url,
-							});
-							encoder.play();
-							console.log('Now playing: "' + info.title + '"');
-							channel.sendMessage('Крипер работает: "' + info.title + '"');
-							encoder.once('end', () => {
-								console.log('Left.');
-								vch.leave();
-							});
-						}
-					});
-				} catch(e) {
-					console.error(e);
-					vch.leave();
-				}
-			});
-			autoRemove(message);
-			return;
-		}
-		
-		// test
-		if (message.content == '%%%') {
-			debugMusic = false;
-			autoRemove(message);
-			return;
-		}
-		
 		// обработка сообщения
 		musicProcess(message);
 	} catch(e) {
@@ -1574,14 +1487,14 @@ function musicProcess(message) {
 	}
 	
 	// skip
-	if (uc == '-') {
+	if (uc == '-' || uc == 'skip' || uc == '!skip') {
 		//ret(cmus, 'Скип пока что ещё не готов, потом доделаю.');
 		musicSkip(message);
 		return;
 	}
 	
 	// search
-	m = uc.match(/^(?:\+([0-9]{0,2})|\?) +(.*)$/);
+	m = uc.match(/^(?:\+([0-9]{0,2})|\?) *(.*)$/);
 	if (m) {
 		let pos = typeof m[1] == 'undefined' ? Math.floor(Math.random() * 25565) : +m[1];
 		musicPut(message, m[2].trim(), pos);
@@ -1589,7 +1502,7 @@ function musicProcess(message) {
 	}
 	
 	// stop
-	if (musicDebug && uc == 'kick') {
+	if (uc == 'stop!!!') {
 		musicStop(cmus);
 		return;
 	}
@@ -1603,7 +1516,7 @@ function musicSkip(message) {
 	}
 	
 	if (!cmus.vch.members.find(c => c.id == message.author.id)) {
-		return ret(cmus, 'Эй, похоже, ты не слушаешь музыку. Зайди в голосовой канал `' + cmus.vch.name + '`.');
+		return ret(cmus, 'Эй, похоже, ты не слышишь, что скипаешь. Зайди в голосовой канал `' + cmus.vch.name + '`.');
 	}
 	
 	let already = cmus.skip.indexOf(message.author.id) != -1;
@@ -1618,9 +1531,11 @@ function musicSkip(message) {
 	if (len >= need) {
 		ret(cmus, 'Музыка скипнута.');
 		if (cmus.e) {
-			cmus.e.stop();
+			cmus.e.destroy();
 		}
-		// event will be dispatched
+		console.log('Music skipped!');
+		cmus.curr = null;
+		musicPlay(cmus);
 	} else {
 		if (already) {
 			ret(cmus, 'Уже проголосовано. Попроси других пропустить (если они не против).');
@@ -1642,7 +1557,7 @@ function musicPut(message, q, search) {
 	
 	console.log('"' + q + '", ' + search);
 	
-	cmus.users = cmus.vch.members.length;
+	//cmus.users = cmus.vch.members.length;
 	
 	if (!cmus.vch.members.find(c => c.id == message.author.id)) {
 		return ret(cmus, 'Эй, сначала зайди в голосовой канал `' + cmus.vch.name + '`, для кого я играть-то буду?');
@@ -1762,7 +1677,7 @@ function musicRejoin(cmus) {
 		cmus.vch.join(false, false).then(c => {
 			console.log('Rejoined.');
 			cmus.c = c.voiceConnection;
-			cmus.users = cmus.vch.members.length;
+			//cmus.users = cmus.vch.members.length;
 			try {
 				musicPlay(cmus);
 				console.log('Set to play.');
@@ -1838,33 +1753,39 @@ function musicUpdate(cmus) {
 		return;
 	}
 	
-	let ctext = 'Текущее: ' + (cmus.curr ? musicStr(cmus.curr) : '<пусто>') + '\n';
-	
-	cmus.users = cmus.vch.members.length;
+	//cmus.users = cmus.vch.members.length;
+	// число уже записано, пусть повисит старое, I don't care.
 	
 	console.log(cmus.members);
 	
+	// == Item count
+	ctext += 'Очередь: [' + cmus.list.length + ' / ' + mus.maxList + ']\n';
+	
+	// == Skips
 	if (cmus.skip.length) {
 		ctext += 'За пропуск проголосовали: ' + cmus.skip.length + ' из ' + Math.floor(cmus.users / 2) + '.\n'
 	}
 	
-	ctext += '\n';
+	// == 0:
+	let ctext = '\n**`Текущее:`** ' + (cmus.curr ? musicStr(cmus.curr) : '<пусто>');
 	
-	ctext += 'Очередь: [' + cmus.list.length + ' / ' + mus.maxList + ']';
+	// == 1: 2: 3:..
 	if (cmus.list.length) {
 		for (let i = 0; i < cmus.list.length; i++) {
-			ctext += '\n' + (i + 1) + ') ' + musicStr(cmus.list[i]);
+			ctext += '\n**`' + (i + 1) + ':`** ' + musicStr(cmus.list[i]);
 		}
 	} else {
 		//ctext += ' <пусто>';
 	}
 	
+	// == Commands
 	ctext += '\n\nС командами всё просто:';
 	ctext += '\n"**<ссылка на видео в YouTube>**" ― поставить музыку из видео.';
 	ctext += '\n"**+ <название>**" ― ищет в YouTube, выбирает первое найденное.';
+	ctext += '\n"**+<n> <название>**" ― ищет в YouTube, выбирает n-ное найденное.';
 	ctext += '\n"**? <название>**" ― ищет в YouTube, рандомно с 1 страницы поиска.';
 	ctext += '\n"**-**" ― проголосовать за пропуск того, что сейчас играет.';
-	ctext += '\n"**@**" ― пробный заход бота в канал, just 4 test.';
+	//ctext += '\n"**@**" ― пробный заход бота в канал, just 4 test.';
 	
 	//ctext = '```\n' + ctext + '\n```';
 	
@@ -1873,16 +1794,24 @@ function musicUpdate(cmus) {
 
 function musicRetext(cmus, ctext) {
 	if (cmus.stat && cmus.stat.then) {
+		// если это ещё не выполнившийся промис, то ждём и редактируем
 		cmus.stat.then(message => {
-			return cmus.stat.edit(ctext);
+			return message.edit(ctext);
 		}).catch(console.error);
 		return;
 	}
 	
 	if (cmus.stat) {
-		return cmus.stat = cmus.stat.edit(ctext);
+		// если это сообщение, то редактируем
+		cmus.stat.edit(ctext).catch(() => {
+			// если удалили, то отсылаем заново
+			cmus.stat = cmus.tch.sendMessage(ctext).then(message => {
+				return cmus.stat = message;
+			}).catch(console.error);
+		});
 	} else {
-		return cmus.stat = cmus.tch.sendMessage(ctext).then(message => {
+		// если ещё нету, то отсылаем
+		cmus.stat = cmus.tch.sendMessage(ctext).then(message => {
 			return cmus.stat = message;
 		}).catch(console.error);
 	}
@@ -1896,7 +1825,6 @@ function musicStop(cmus) {
 	try {
 		if (cmus.c) {
 			if (cmus.e) {
-				cmus.e.stop();
 				cmus.e.destroy();
 				cmus.e = null;
 			}
@@ -1911,3 +1839,5 @@ function musicStop(cmus) {
 		console.error(e);
 	}
 }
+
+})();
