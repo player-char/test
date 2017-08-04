@@ -1753,6 +1753,8 @@ function musicUpdate(cmus) {
 		return;
 	}
 	
+	let ctext = '';
+	
 	//cmus.users = cmus.vch.members.length;
 	// число уже записано, пусть повисит старое, I don't care.
 	
@@ -1767,7 +1769,7 @@ function musicUpdate(cmus) {
 	}
 	
 	// == 0:
-	let ctext = '\n**`Текущее:`** ' + (cmus.curr ? musicStr(cmus.curr) : '<пусто>');
+	ctext += '\n**`Текущее:`** ' + (cmus.curr ? musicStr(cmus.curr) : '<пусто>');
 	
 	// == 1: 2: 3:..
 	if (cmus.list.length) {
