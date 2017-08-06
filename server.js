@@ -1363,7 +1363,7 @@ function processMessage(message) {
 			r: 'reply', // reply with mentioning by default
 		};
 		
-		let timer = performance.now();
+		let timer = Date.now();
 		
 		// крипера ответ
 		checkReply(message, flags);
@@ -1371,7 +1371,7 @@ function processMessage(message) {
 		// stats
 		stat.useCount++;
 		stat.useDMCount += +!message.guild;
-		stat.timeLast = (performance.now() - timer) / 1000;
+		stat.timeLast = Date.now() - timer;
 		stat.timeSum += stat.timeLast;
 		if (stat.timeMax < stat.timeLast) {
 			stat.timeMax = stat.timeLast;
