@@ -30,7 +30,9 @@ var since = Date.now();
 var statLaunches = +!!statLaunches + 1;
 var stat = {
 	useCount: 0,
+	useRepliedCount: 0,
 	useDMCount: 0,
+	useRepliedDMCount: 0,
 	errorCount: 0,
 	timeSum: 0,
 	timeMax: 0,
@@ -59,6 +61,8 @@ function pluralize(n, arr) {
 	return arr[(n - k) / 10 % 10 != 1 ? (k != 1 ? ([2, 3, 4].includes(k) ? 1 : 2) : 0) : 2];
 }
 
+var months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+
 // приблизительное время создания снежинки
 function sfTime(s) {
     return new Date(1420070400000 + s / 4194304);
@@ -67,12 +71,18 @@ function sfTime(s) {
 var timezoneOffset = 3;
 var timezoneSuffix = ' МСК';
 
+// читабельное числовое время в текущей таймзоне
 function dateStr(d) {
 	if (!d.toJSON) {
 		d = new Date(d);
 	}
 	d.setHours(d.getHours() + timezoneOffset);
 	return d.toJSON().split(".")[0].replace(/T/, ' ') + timezoneSuffix;
+}
+
+// словесное описание дня
+function dateDay(d) {
+	return d.getDate() + '-го ' + months[d.getMonth()] + ' ' + d.getFullYear() + ' года';
 }
 
 // разница между таймстемпами словами
@@ -680,8 +690,32 @@ var responses = [
 	// кто ты?
 	{
 		d: true,
-		p: /(^|[^а-яё])(кто [вт]ы|[вт]ы кто)( вообще)?( такой( вообще)?)?[?! ]*$/i,
+		p: /(^|[^а-яё])(кто [вт]ы|[вт]ы кто)( вообще)?( такой( вообще)?)?[?!. ]*$/i,
 		r: 'неужели ты ещё не знаешь?',
+	},
+	// когда др?
+	{
+		d: true,
+		p: /(^|[^а-яё])(когда|какого числа) ((у тебя|тво[йёе]) )? (день рожден[иь]я|днюха|др)[?!. ]*$/i,
+		r: () => dateDay(sfTime(myId)) + '.',
+	},
+	// когда зарегано?
+	{
+		d: true,
+		p: /(^|[^а-яё])(когда|какого числа) (был[ао]? )?((зарег(истриров)?|созд|сдел)а(н[ао]?|л(ся|[ао]сь)))( (пользователь|юзер|канал|снежинка|id))?\s+(<?[@&#]{0,2}(\d{1,20})>?)?[?!. ]*$/i,
+		r: (m, flags, floodey) => {
+			if (!m[12]) {
+				return 'Когда мне в майн играть надоело.';
+			}
+			let t = sfTime(m[12]);
+			if (floodey) {
+				flags.r = 'dm';
+			}
+			if (!(t.getHours() >= 0)) {
+				return 'Упс, что-то цифры обкурились немножко.';
+			}
+			return '**`' + dateStr(t) + '`**';
+		},
 	},
 	// го играть?
 	{
@@ -1203,22 +1237,24 @@ var responses = [
 		d: true,
 		p: /^ *(с(лей|кинь) инфу|дебаг)( в лс)?[!. ]*$/i,
 		r: (m) => {
-			let t = 'слив инфы о работе (за данный сеанс):\n';
 			let now = new Date();
-			
-			t += 'Я онлайн уже ' + dateDiff(since, +now) + '.\n';
-			t += 'Время на моих часах при запуске: \n`' + dateStr(since) + '`.\n';
-			t += 'Время на моих часах сейчас: \n`' + dateStr(now) + '`.\n';
-			
-			t += 'Запросов всего: `' + stat.useCount + '`.\n';
-			t += 'Запросов из лс: `' + stat.useDMCount + '`.\n';
-			t += 'Среднее время отклика: `' + (stat.timeSum / stat.useCount) + ' мс`.\n';
-			t += 'Наибольшее время отклика: `' + stat.timeMax + ' мс`.\n';
-			t += 'Последнее время отклика: `' + stat.timeLast + ' мс`.\n';
-			t += 'Шишек набито при ответе: `' + stat.errorCount + '`.\n';
-			t += 'Запусков в этой сессии: `' + statLaunches + '`.\n';
-			
-			return t;
+			return [
+				'слив инфы о работе (за данный сеанс):',
+				'',
+				'Я онлайн уже ' + dateDiff(since, +now) + '.',
+				'Время на моих часах при запуске:\n**`' + dateStr(since) + '`**.',
+				'Время на моих часах сейчас:\n**`' + dateStr(now) + '`**.',
+				'',
+				'Запросов всего: **`' + stat.useRepliedCount + '/' + stat.useCount + '`**.',
+				'Запросов из лс: **`' + stat.useRepliedDMCount + '/' + stat.useDMCount + '`**.',
+				'',
+				'Последнее время отклика: **`' + stat.timeLast + ' мс`**.',
+				'Среднее время отклика: **`' + (stat.timeSum / stat.useCount).toFixed(2) + ' мс`**.',
+				'Наибольшее время отклика: **`' + stat.timeMax + ' мс`**.',
+				'',
+				'Шишек набито при ответе: **`' + stat.errorCount + '`**.',
+				'Запусков в этой сессии: **`' + statLaunches + '`**.',
+			].join('\n');
 		},
 	},
 	
@@ -1377,8 +1413,9 @@ function checkReply(message, flags) {
 		} else {
 			capReply(message, resp, flags);
 		}
-		return;
+		return true;
 	}
+	return false;
 }
 
 function processMessage(message) {
