@@ -29,10 +29,11 @@ var timestamps = {
 var since = Date.now();
 var statLaunches = +!!statLaunches + 1;
 var stat = {
-	useCount: 0,
-	useRepliedCount: 0,
-	useDMCount: 0,
-	useRepliedDMCount: 0,
+	readCount: 0,
+	replyCount: 0,
+	readCountDM: 0,
+	replyCountDM: 0,
+	mentionCount: 0,
 	errorCount: 0,
 	timeSum: 0,
 	timeMax: 0,
@@ -580,61 +581,9 @@ var responses = [
 	// скинь фотку
 	{
 		d: true,
-		p: /(^|[^а-яё])(с?кинь|(дай|можно|изволь) (посмотреть|увидеть|глянуть)) (((рандомну|[ст]во)[юеё] )?фот(о|ку|ографию))( крип(ер|ак)а)?/i,
+		p: /(^|[^а-яё])(с?кинь|(дай|можно|изволь) (посмотреть|увидеть|глянуть)) ([ст]во[юеё] )?фот(о|ку|ографию)( крип(ер|ак)а)?/i,
 		m: 'dm',
-		r: () => new Promise((resolve) => https.get('https://www.google.com/search?tbm=isch&q=minecraft+creeper'
-		+ ['', '+png', '+photo', '+screenshot', '+cute', '+dance', '+jpg'].pick(), response => {
-			console.log('Search results started...');
-			let data = '';
-			
-			response.on('data', part => {
-				data += part;
-			});
-			
-			response.on('end', () => {
-				console.log('Search results ended...');
-				if (+(response.statusCode) != 200) {
-					console.log('Search Failed,', response.statusCode);
-					resolve('Поиск провалился. Сервера ответ: ' + response.statusCode);
-				}
-				let pos = -1;
-				let arr = [];
-				/*
-				while ((pos = data.indexOf(':","data:image/', pos + 1)) != -1) {
-					arr.push(pos);
-				}
-				if (!arr.length) {
-					console.log('Nothing found!', data);
-					resolve('Ничего не нашлось!');
-				}
-				pos = arr.pick() + 4;
-				let end = data.indexOf('"', pos + 1);
-				let base = data.slice(pos, end);
-				base = JSON.parse('"' + base + '"');
-				console.log('Base64: ' + base);
-				resolve({text: 'держи:', files: [{attachment: base}]});
-				*/
-				while ((pos = data.indexOf('word-wrap:break-word"><a href="', pos + 1)) != -1) {
-					arr.push(pos);
-				}
-				if (!arr.length) {
-					console.log('Nothing found!', data);
-					resolve('Что-то нигде не нашёл..!');
-				}
-				pos = arr.pick();
-				let start = data.indexOf(' src="', pos) + 6;
-				let end = data.indexOf('"', start);
-				let url = data.slice(start, end);
-				console.log('IMG URL: ' + url);
-				resolve({text: 'держи:', files: [{attachment: url, name: 'creepah.png'}]});
-			});
-			
-			response.on('error', err => {
-				console.log('Can\'t load search results: ');
-				console.error(err);
-				resolve('Упс, во время поиска что-то оборвалось.');
-			});
-		})),
+		r: {text: 'держи:', files: [{attachment: 'http://i.imgur.com/MnncBu7.jpg'}]},
 	},
 	// скинь скрин
 	{
@@ -1236,6 +1185,7 @@ var responses = [
 	{
 		d: true,
 		p: /^ *(с(лей|кинь) инфу|дебаг)( в лс)?[!. ]*$/i,
+		m: 'dm',
 		r: (m) => {
 			let now = new Date();
 			return [
@@ -1245,14 +1195,15 @@ var responses = [
 				'Время на моих часах при запуске:\n**`' + dateStr(since) + '`**.',
 				'Время на моих часах сейчас:\n**`' + dateStr(now) + '`**.',
 				'',
-				'Запросов всего: **`' + stat.useRepliedCount + '/' + stat.useCount + '`**.',
-				'Запросов из лс: **`' + stat.useRepliedDMCount + '/' + stat.useDMCount + '`**.',
+				'Ответов/запросов всего: **`' + stat.replyCount + '/' + stat.readCount + '`**.',
+				'Ответов/запросов из лс: **`' + stat.replyCountDM + '/' + stat.readCountDM + '`**.',
+				'Призываний: **`' + stat.mentionCount + '`**.',
 				'',
 				'Последнее время отклика: **`' + stat.timeLast + ' мс`**.',
-				'Среднее время отклика: **`' + (stat.timeSum / stat.useCount).toFixed(2) + ' мс`**.',
+				'Среднее время отклика: **`' + (stat.timeSum / stat.readCount).toFixed(2) + ' мс`**.',
 				'Наибольшее время отклика: **`' + stat.timeMax + ' мс`**.',
 				'',
-				'Шишек набито при ответе: **`' + stat.errorCount + '`**.',
+				'Шишек набито при запросе: **`' + stat.errorCount + '`**.',
 				'Запусков в этой сессии: **`' + statLaunches + '`**.',
 			].join('\n');
 		},
@@ -1427,11 +1378,15 @@ function processMessage(message) {
 		let timer = Date.now();
 		
 		// крипера ответ
-		checkReply(message, flags);
+		let replied = checkReply(message, flags);
 		
 		// stats
-		stat.useCount++;
-		stat.useDMCount += +!message.guild;
+		stat.readCount++;
+		stat.readCountDM += +!message.guild;
+		if (replied) {
+			stat.replyCount++;
+			stat.replyCountDM += +!message.guild;
+		}
 		stat.timeLast = Date.now() - timer;
 		stat.timeSum += stat.timeLast;
 		if (stat.timeMax < stat.timeLast) {
