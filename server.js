@@ -29,6 +29,7 @@ var timestamps = {
 var floodeys = {};
 var floodrate = 5; // штрафных секунд за сообщение
 var floodmax = 25; // штрафных секунд для получения игнора
+var floodchills = 2; // число чиллаутов писать перед игнором
 
 var since = Date.now();
 var statLaunches = +!!statLaunches + 1;
@@ -37,6 +38,7 @@ var stat = {
 	replyCount: 0,
 	readCountDM: 0,
 	replyCountDM: 0,
+	chillCount: 0,
 	mentionCount: 0,
 	errorCount: 0,
 	timeSum: 0,
@@ -594,7 +596,7 @@ var responses = [
 		d: true,
 		p: /(^|[^а-яё])(с?кинь|(дай|можно|изволь) (посмотреть|увидеть|глянуть)) ([ст]во[юеё] )?фот(о|ку|ографию)( крип(ер|ак)а)?/i,
 		m: 'dm',
-		r: {text: 'держи:', files: [{attachment: 'http://i.imgur.com/MnncBu7.jpg', }]},
+		r: {text: 'держи:', files: [{attachment: 'http://i.imgur.com/MnncBu7.jpg', name: 'creeper.png'}]},
 	},
 	// скинь скрин
 	{
@@ -1208,6 +1210,7 @@ var responses = [
 				'',
 				'Ответов/запросов всего: **`' + stat.replyCount + '/' + stat.readCount + '`**.',
 				'Ответов/запросов из лс: **`' + stat.replyCountDM + '/' + stat.readCountDM + '`**.',
+				'Чиллаутов выдано: **`' + stat.chillCount + '`**.',
 				'Призываний: **`' + stat.mentionCount + '`**.',
 				'',
 				'Последнее время отклика: **`' + stat.timeLast + ' мс`**.',
@@ -1309,31 +1312,33 @@ function checkReply(message, flags) {
 	if (!floodeys[uid]) {
 		floodeys[uid] = {
 			time: now,
-			ignore: false,
+			chills: 0,
 		};
 	}
 	
 	let fdata = floodeys[uid];
 	let score = fdata.time - now;
 	if (score < 0) {
-		fdata.ignore = false;
+		fdata.chills = 0;
 		score = 0;
 	}
 	score += floodrate * 1000;
 	fdata.time = now + score;
-	if (fdata.ignore) {
-		return 'ignored';
+	if (fdata.chills >= floodchills) {
+		// игнорим месседж
+		return false;
 	}
 	if (score > floodmax * 1000) {
-		fdata.ignore = false;
+		fdata.chills++;
 		let resp = [
 			'достаточно набивать сообщения!',
 			'you are being rate limited!',
 			'время флуда окончено, давай иди отдыхай.',
+			'эй, не так быстро!',
 			'охлади отправку сообщений, я не успеваю читать.',
 		];
 		capReply(message, resp, flags);
-		return 'ignored';
+		return 'chillout';
 	}
 	
 	// первичная обработка сообщения
@@ -1429,6 +1434,9 @@ function processMessage(message) {
 		stat.readCount++;
 		stat.readCountDM += +!message.guild;
 		if (replied) {
+			if (replied === 'chillout') {
+				stat.chillCount++;
+			}
 			stat.replyCount++;
 			stat.replyCountDM += +!message.guild;
 		}
