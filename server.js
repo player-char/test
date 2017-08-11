@@ -24,7 +24,11 @@ var hidden = false;
 var timestamps = {
 	norm: -Infinity,
 	good: -Infinity,
-}
+};
+
+var floodeys = {};
+var floodrate = 5; // штрафных секунд за сообщение
+var floodmax = 25; // штрафных секунд для получения игнора
 
 var since = Date.now();
 var statLaunches = +!!statLaunches + 1;
@@ -544,6 +548,13 @@ var responses = [
 		r: 'нет, я в порядке, тебе померещилось.',
 	},
 	
+	// видно - обидно
+	{
+		d: true,
+		p: /(^|[^а-яё])там видно будет/i,
+		r: 'видно-то сейчас видно, а там промажешь — будет обидно!',
+	},
+	
 	// eval = evil
 	{
 		d: true,
@@ -583,7 +594,7 @@ var responses = [
 		d: true,
 		p: /(^|[^а-яё])(с?кинь|(дай|можно|изволь) (посмотреть|увидеть|глянуть)) ([ст]во[юеё] )?фот(о|ку|ографию)( крип(ер|ак)а)?/i,
 		m: 'dm',
-		r: {text: 'держи:', files: [{attachment: 'http://i.imgur.com/MnncBu7.jpg'}]},
+		r: {text: 'держи:', files: [{attachment: 'http://i.imgur.com/MnncBu7.jpg', }]},
 	},
 	// скинь скрин
 	{
@@ -651,7 +662,7 @@ var responses = [
 	// когда зарегано?
 	{
 		d: true,
-		p: /(^|[^а-яё])(когда|какого числа) (был[ао]? |ты )?((зарег(истриров)?|созд|сдел)а(н[ао]?|л(ся|[ао]сь)))( (пользователь|юзер|канал|снежинка|id))?\s+(\\?<?\\?(@[!&]?|#|:[^:]+:)(\d{1,20})>?)?[?!. ]*$/i,
+		p: /(^|[^а-яё])(когда|какого числа) (был[ао]? |ты )?((зарег(истриров)?|созд|сдел)а(н[ао]?|л(и|ся|[аои]сь)))( (пользователь|юзер|канал|снежинка|id))?\s+(\\?<?\\?(@[!&]?|#|:[^:]+:)?(\d{1,20})>?)?[?!. ]*$/i,
 		r: (m, flags, floodey) => {
 			if (!m[13]) {
 				return 'когда мне в майн играть надоело.';
@@ -822,13 +833,20 @@ var responses = [
 		r: (m) => (m[1] == 'скрипт' ? 'да' : 'нет') + ', я скрипт.',
 	},
 	
+	// футгол
+	{
+		d: true,
+		p: /(^|[^а-яё])(гол|болеешь|забей)([^а-яё]|$)/i,
+		r: 'извини, травмоопасными видами спорта не увлекаюсь.',
+	},
+	
 	// че сказал?
 	{
 		d: true,
-		p: /(^|[^а-яё])ч(то|[оеё]) (ты )?(мелешь|несёшь|сказал|говори(шь|л))[?! ]*$/i,
+		p: /(^|[^а-яё])ч(то|[оеё]) (ты )?(мелешь|с?молол|несёшь|сказал|говори(шь|л))[?! ]*$/i,
 		r: (m) => {
 			let verb = m[4].toLowerCase();
-			if (verb == 'мелешь') {
+			if (verb.match(/м[ео]л/i)) {
 				return 'если бы я был мельницей, я бы определённо молол зерно.';
 			}
 			if (verb == 'несёшь') {
@@ -1005,13 +1023,6 @@ var responses = [
 	
 	
 	// третья часть - низкоприоритетные
-	
-	// видно - обидно
-	{
-		d: true,
-		p: /(^|[^а-яё])там видно будет/i,
-		r: 'видно-то сейчас видно, а там промажешь — будет обидно!',
-	},
 	
 	// кастит
 	{
@@ -1246,7 +1257,7 @@ var responses = [
 
 // капитализация и отправка
 function capReply(message, text, flags) {
-	let attach = null;
+	let attach;
 	if (text.files && typeof text.text == 'string') {
 		attach = text.files;
 		text = text.text;
@@ -1291,10 +1302,44 @@ function capReply(message, text, flags) {
 
 // чем отвечать будем
 function checkReply(message, flags) {
+	let now = Date.now();
+	let uid = message.author.id;
+	
+	// антифлуд-система
+	if (!floodeys[uid]) {
+		floodeys[uid] = {
+			time: now,
+			ignore: false,
+		};
+	}
+	
+	let fdata = floodeys[uid];
+	let score = fdata.time - now;
+	if (score < 0) {
+		fdata.ignore = false;
+		score = 0;
+	}
+	score += floodrate * 1000;
+	fdata.time = now + score;
+	if (fdata.ignore) {
+		return 'ignored';
+	}
+	if (score > floodmax * 1000) {
+		fdata.ignore = false;
+		let resp = [
+			'достаточно набивать сообщения!',
+			'you are being rate limited!',
+			'время флуда окончено, давай иди отдыхай.',
+			'охлади отправку сообщений, я не успеваю читать.',
+		];
+		capReply(message, resp, flags);
+		return 'ignored';
+	}
+	
+	// первичная обработка сообщения
 	let mentioned = message.mentions.users.has(myId) || (!message.guild ? 'dm' : false);
 	let lc = message.content.trim();
 	let m = null;
-	let now = Date.now();
 	let floodey = message.guild && (floodless.indexOf(message.channel.id) != -1);
 	
 	cutOff = (m, lc) => (m.index ? (lc.slice(0, m.index) + ' ') : '') + lc.slice(m.index + m[0].length);
@@ -1387,6 +1432,7 @@ function processMessage(message) {
 			stat.replyCount++;
 			stat.replyCountDM += +!message.guild;
 		}
+		stat.mentionCount += +message.mentions.users.has(myId);
 		stat.timeLast = Date.now() - timer;
 		stat.timeSum += stat.timeLast;
 		if (stat.timeMax < stat.timeLast) {
@@ -1398,8 +1444,6 @@ function processMessage(message) {
 		console.log('Error got on phrase', message.content);
 		console.error(e);
 		stat.errorCount++;
-		//wrecked = true;
-		//message.reply(e.name + ': ' + e.message);
 	}
 }
 
@@ -1411,11 +1455,13 @@ client.on('message', message => {
 	
 	try {
 		
+		/*
 		if (typeof mus != 'undefined' && message.guild && mus[message.guild.id] && mus[message.guild.id].tid == message.channel.id) {
 			//musicProcess(message);
 			
 			return;
 		}
+		*/
 		
 		// delay is necessary for correct message ordering
 		// because sometimes bot is too fast
@@ -1436,495 +1482,5 @@ client.on('ready', () => {
 
 
 client.login(myToken);
-
-
-// Модуль для проигрывания музыки
-// discord.js не смог, так что музыка через Discordie.
-
-var Discordie = require('discordie');
-var clientMusic = new Discordie({autoReconnect: true});
-var debugMusic = true;
-
-// данные о музыкальных каналах
-var mus = {
-	maxList: 20,
-	'175951720990507008': {
-		vid: '315439572710326284', // voice channel id
-		tid: '315445827772481537', // text channel id
-		vch: null, // voice channel object
-		tch: null, // text channel object
-		adding: false,
-		list: [],
-		skip: [],
-		users: 0,
-		c: null, // connection
-		e: null, // encoder
-		curr: null,
-		stat: null,
-	},
-};
-
-var musMsgLifespan = 5000;
-
-var dl = require('youtube-dl');
-
-clientMusic.connect({token: myToken});
-
-clientMusic.Dispatcher.on("GATEWAY_READY", e => {
-	clientMusic.User.setStatus('invisible');
-	console.log('Discordie is ready!');
-	//_f();
-});
-
-/*
-function _f() {
-	clientMusic.Channels.get("315439572710326284").join(false, false).then(c => {
-		console.log('Connected.');
-	}).catch(e => {
-		console.log(e);
-		_f();
-	});
-}
-*/
-
-clientMusic.Dispatcher.on("MESSAGE_CREATE", (e) => {
-	const message = e.message;
-	const content = message.content;
-	const channel = message.channel;
-	const guild = channel.guild;
-	
-	if (!guild) {
-		return;
-	}
-	
-	try {
-		// бот должен игнорить себя
-		if (ignores.indexOf(message.author.id) !== -1) {
-			return;
-		}
-		
-		if (!mus[guild.id] || mus[guild.id].tid != channel.id) {
-			return;
-		}
-		
-		let vch = guild.voiceChannels.find(c => c.id == mus[guild.id].vid);
-		
-		// обработка сообщения
-		musicProcess(message);
-	} catch(e) {
-		console.log('Discordie Error!');
-		console.error(e);
-	}
-});
-
-// удаление сообщений через время
-function autoRemove(message) {
-	setTimeout(function() {
-		message.delete();
-	}, musMsgLifespan);
-}
-
-// ответ на запрос
-function ret(cmus, result) {
-	console.log('ret: ', result);
-	result = String(result);
-	if (!result) {
-		return;
-	}
-	setTimeout(() => {
-		cmus.tch.sendMessage(result).then(message => {
-			autoRemove(message);
-		});
-	}, 150);
-}
-
-function encodeSearchQuery(q) {
-	return encodeURIComponent(q).split('%20').join('+');
-}
-
-function decodeHTML(s) {
-	return s.replace(/&#(\d{1,8});/g, function(a, b) {return String.fromCharCode(+b)});
-}
-
-function escMD(s) {
-	return s.replace(/([`*~_\\])/g, '\\$1');
-}
-
-function musicProcess(message) {
-	const channel = message.channel;
-	const guild = channel.guild;
-	
-	const cmus = mus[message.guild.id];
-	let uc = message.content.trim();
-	let m;
-	
-	cmus.vch = guild.voiceChannels.find(c => c.id == cmus.vid);
-	cmus.tch = channel;
-	
-	autoRemove(message);
-	
-	// play music
-	//m = uc.match(/https?:\/\/[0-9a-zA-Z.\/?=%#_+-]+/);
-	m = uc.match(/(youtu\.be\/|watch\?v=)([0-9a-zA-Z_-]+)/);
-	if (m) {
-		musicPut(message, m[2], -1);
-		return;
-	}
-	
-	// skip
-	if (uc == '-' || uc == 'skip' || uc == '!skip') {
-		//ret(cmus, 'Скип пока что ещё не готов, потом доделаю.');
-		musicSkip(message);
-		return;
-	}
-	
-	// search
-	m = uc.match(/^(?:\+([0-9]{0,2})|\?) *(.*)$/);
-	if (m) {
-		let pos = typeof m[1] == 'undefined' ? Math.floor(Math.random() * 25565) : +m[1];
-		musicPut(message, m[2].trim(), pos);
-		return;
-	}
-	
-	// stop
-	if (uc == 'stop!!!') {
-		musicStop(cmus);
-		return;
-	}
-}
-
-function musicSkip(message) {
-	let cmus = mus[message.guild.id];
-	
-	if (!cmus.c || !cmus.curr) {
-		return ret(cmus, 'Пропускать нечего, и так там ничего не играет.');
-	}
-	
-	if (!cmus.vch.members.find(c => c.id == message.author.id)) {
-		return ret(cmus, 'Эй, похоже, ты не слышишь, что скипаешь. Зайди в голосовой канал `' + cmus.vch.name + '`.');
-	}
-	
-	let already = cmus.skip.indexOf(message.author.id) != -1;
-	if (!already) {
-		cmus.skip.push(message.author.id);
-	}
-	
-	cmus.users = cmus.vch.members.length;
-	let need = Math.floor(cmus.users / 2);
-	let len = cmus.skip.length;
-	
-	if (len >= need) {
-		ret(cmus, 'Музыка скипнута.');
-		if (cmus.e) {
-			cmus.e.destroy();
-		}
-		console.log('Music skipped!');
-		cmus.curr = null;
-		musicPlay(cmus);
-	} else {
-		if (already) {
-			ret(cmus, 'Уже проголосовано. Попроси других пропустить (если они не против).');
-		} else {
-			ret(cmus, 'Голос учтён (' + len + ' / ' + need + ').');
-		}
-		musicUpdate(cmus);
-	}
-}
-
-function musicPut(message, q, search) {
-	let cmus = mus[message.guild.id];
-	
-	q = q.slice(0, 80);
-	
-	if (!q.length) {
-		return;
-	}
-	
-	console.log('"' + q + '", ' + search);
-	
-	//cmus.users = cmus.vch.members.length;
-	
-	if (!cmus.vch.members.find(c => c.id == message.author.id)) {
-		return ret(cmus, 'Эй, сначала зайди в голосовой канал `' + cmus.vch.name + '`, для кого я играть-то буду?');
-	}
-	
-	if (cmus.list.length >= mus.maxList) {
-		musicRejoin(cmus);
-		return ret(cmus, 'Довольно добавлять, пусть сначала текущее доиграет.');
-	}
-	
-	cmus.adding = true;
-	
-	message.guild.voiceChannels.find(c => c.id == cmus.vid).join(false, false).then((c) => {
-		if (!cmus.adding && !cmus.c) {
-			cmus.vch.leave();
-		}
-	}).catch(console.error);
-	
-	console.log('Continued...');
-	
-	if (search != -1) {
-		// searching
-		https.get('https://www.youtube.com/results?search_query=' + encodeSearchQuery(q), response => {
-			console.log('Search results started...');
-			let data = '';
-			
-			response.on('data', part => {
-				data += part;
-			});
-			
-			response.on('end', () => {
-				cmus.adding = false;
-				console.log('Search results ended...');
-				if (+(response.statusCode) != 200) {
-					return ret(cmus, 'Поиск провалился. Сервера ответ: ' + response.statusCode);
-				}
-				let pos = -1;
-				if (search) {
-					let arr = [];
-					while ((pos = data.indexOf('context-item-id="', pos + 1)) != -1) {
-						arr.push(pos);
-					}
-					if (arr.length) {
-						pos = arr[search % arr.length];
-					}
-				} else {
-					pos = data.indexOf('context-item-id="', 0);
-				}
-				if (pos == -1) {
-					return ret(cmus, 'Ничего не нашлось по данному запросу.');
-				}
-				let piece = data.substr(pos, 9000);
-				let link = piece.match(/"([^"]+)"/)[1];
-				let title = decodeHTML(piece.match(/yt-uix-tile-link[^>]+>([^<]*)</)[1]);
-				let author = decodeHTML(piece.match(/g-hovercard[^>]+>([^<]*)</)[1]);
-				musicPush(cmus, link, message.author, title, author);
-			});
-			
-			response.on('error', err => {
-				cmus.adding = false;
-				console.log('Can\'t load search results: ');
-				console.error(err);
-				return ret(cmus, 'Упс, во время поиска что-то оборвалось.');
-			});
-		});
-	} else {
-		// direct video url
-		https.get('https://www.youtube.com/embed/' + q, response => {
-			console.log('Request started...');
-			let data = '';
-			
-			response.on('data', part => {
-				data += part;
-			});
-			
-			response.on('end', () => {
-				cmus.adding = false;
-				console.log('Request ended...');
-				if (+(response.statusCode) != 200) {
-					return ret(cmus, 'Запрос провалился. Сервера ответ: ' + response.statusCode);
-				}
-				let title = decodeHTML(data.match(/<title>([^<]*)</)[1]);
-				//let author = decodeHTML(piece.match(/g-hovercard[^>]+>([^<]*)</)[1]);
-				musicPush(cmus, q, message.author, title, "...");
-			});
-			
-			response.on('error', err => {
-				cmus.adding = false;
-				console.log('Can\'t load search results: ');
-				console.error(err);
-				return ret(cmus, 'Упс, во время поиска что-то оборвалось.');
-			});
-		});
-	}
-}
-
-function musicPush(cmus, url, user, title, author) {
-	cmus.list.push({
-		title: title,
-		user: user,
-		author: author,
-		url: url,
-	});
-	
-	ret(cmus, 'Добавлено в очередь: ' + title);
-	
-	musicRejoin(cmus);
-	musicUpdate(cmus);
-}
-
-function musicRejoin(cmus) {
-	if (!cmus.c) {
-		console.log('Rejoining...');
-		cmus.c = 'pending';
-		
-		// connection bugs or lags
-		cmus.vch.join(false, false).then(c => {
-			console.log('Rejoined.');
-			cmus.c = c.voiceConnection;
-			//cmus.users = cmus.vch.members.length;
-			try {
-				musicPlay(cmus);
-				console.log('Set to play.');
-			} catch(e) {
-				ret(cmus, 'Упс, не получилось поставить.');
-				console.log('Failed to play the music.');
-				console.error(e);
-				musicPlay(cmus);
-			}
-		}).catch(e => {
-			ret(cmus, 'Ауч, я споткнулся о ступеньку, когда заходил в канал.');
-			console.log('Failed to join voice channel.');
-			console.error(e);
-			musicStop(cmus);
-		});
-	}
-}
-
-function musicPlay(cmus) {
-	if (cmus.list.length == 0) {
-		ret(cmus, 'Музыка закончилась, выхожу из канала.');
-		musicStop(cmus);
-		return;
-	}
-	
-	cmus.curr = cmus.list.shift();
-	cmus.skip = [];
-	console.log('> [https://youtu.be/' + cmus.curr.url + ']');
-	
-	dl.getInfo('https://www.youtube.com/watch?v=' + cmus.curr.url, ['--skip-download'], function (err, info) {
-		if (err || !info) {
-			console.error(err);
-			ret(cmus, 'Упс, не удалось получить стрим ' + cmus.curr.url);
-			musicPlay(cmus);
-		} else if (info) {
-			musicConnect(cmus, info);
-		}
-	});
-}
-
-function musicConnect(cmus, info) {
-	//console.log(info.url);
-	if (cmus.e) {
-		cmus.e.destroy();
-	}
-	var encoder = cmus.e = cmus.c.createExternalEncoder({
-		type: 'ffmpeg',
-		format: 'pcm',
-		source: info.url,
-	});
-	encoder.play();
-	console.log('Now playing: "' + info.title + '"');
-	ret(cmus, 'Сейчас играет музыка "' + info.title + '"');
-	encoder.once('end', () => {
-		console.log('Music ended.');
-		cmus.curr = null;
-		musicPlay(cmus);
-	});
-	encoder.on('error', (e) => {
-		console.log('Encoder error: ' + e);
-		cmus.curr = null;
-		musicPlay(cmus);
-	});
-}
-
-function musicStr(item) {
-	return escMD(item.title) + ',\n<https://youtu.be/' + item.url +
-	'>,\nдобавлено пользователем ' + escMD(item.user.nick || item.user.username) + '.';
-}
-
-function musicUpdate(cmus) {
-	if (!cmus.c) {
-		return;
-	}
-	
-	let ctext = '';
-	
-	//cmus.users = cmus.vch.members.length;
-	// число уже записано, пусть повисит старое, I don't care.
-	
-	console.log(cmus.members);
-	
-	// == Item count
-	ctext += 'Очередь: [' + cmus.list.length + ' / ' + mus.maxList + ']\n';
-	
-	// == Skips
-	if (cmus.skip.length) {
-		ctext += 'За пропуск проголосовали: ' + cmus.skip.length + ' из ' + Math.floor(cmus.users / 2) + '.\n'
-	}
-	
-	// == 0:
-	ctext += '\n**`Текущее:`** ' + (cmus.curr ? musicStr(cmus.curr) : '<пусто>');
-	
-	// == 1: 2: 3:..
-	if (cmus.list.length) {
-		for (let i = 0; i < cmus.list.length; i++) {
-			ctext += '\n**`' + (i + 1) + ':`** ' + musicStr(cmus.list[i]);
-		}
-	} else {
-		//ctext += ' <пусто>';
-	}
-	
-	// == Commands
-	ctext += '\n\nС командами всё просто:';
-	ctext += '\n"**<ссылка на видео в YouTube>**" ― поставить музыку из видео.';
-	ctext += '\n"**+ <название>**" ― ищет в YouTube, выбирает первое найденное.';
-	ctext += '\n"**+<n> <название>**" ― ищет в YouTube, выбирает n-ное найденное.';
-	ctext += '\n"**? <название>**" ― ищет в YouTube, рандомно с 1 страницы поиска.';
-	ctext += '\n"**-**" ― проголосовать за пропуск того, что сейчас играет.';
-	//ctext += '\n"**@**" ― пробный заход бота в канал, just 4 test.';
-	
-	//ctext = '```\n' + ctext + '\n```';
-	
-	musicRetext(cmus, ctext);
-}
-
-function musicRetext(cmus, ctext) {
-	if (cmus.stat && cmus.stat.then) {
-		// если это ещё не выполнившийся промис, то ждём и редактируем
-		cmus.stat.then(message => {
-			return message.edit(ctext);
-		}).catch(console.error);
-		return;
-	}
-	
-	if (cmus.stat) {
-		// если это сообщение, то редактируем
-		cmus.stat.edit(ctext).catch(() => {
-			// если удалили, то отсылаем заново
-			cmus.stat = cmus.tch.sendMessage(ctext).then(message => {
-				return cmus.stat = message;
-			}).catch(console.error);
-		});
-	} else {
-		// если ещё нету, то отсылаем
-		cmus.stat = cmus.tch.sendMessage(ctext).then(message => {
-			return cmus.stat = message;
-		}).catch(console.error);
-	}
-}
-
-function musicRemember(cmus) {
-	
-}
-
-function musicStop(cmus) {
-	try {
-		if (cmus.c) {
-			if (cmus.e) {
-				cmus.e.destroy();
-				cmus.e = null;
-			}
-			cmus.c = null;
-			cmus.curr = null;
-			cmus.list = [];
-			cmus.skip = [];
-			cmus.vch.leave();
-			musicUpdate(cmus);
-		}
-	} catch(e) {
-		console.error(e);
-	}
-}
 
 })();
