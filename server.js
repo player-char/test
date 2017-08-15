@@ -1247,7 +1247,7 @@ var responses = [
 				'Последнее время отклика: **`' + stat.timeLast + ' мс`**.',
 				'Среднее время отклика: **`' + (stat.timeSum / stat.readCount).toFixed(2) + ' мс`**.',
 				'Наибольшее время отклика: **`' + stat.timeMax + ' мс`**.',
-				'Наибольшее время простоя: **`' + (stat.waitMax >= 1000 ? dateDiff(stat.waitMax, +now) : 'мало') + '`**.',
+				'Наибольшее время простоя: **`' + (stat.waitMax >= 1000 ? dateDiff(0, stat.waitMax) : 'мало') + '`**.',
 				'',
 				'Шишек набито при запросе: **`' + stat.errorCount + '`**.',
 				'Запусков в этой сессии: **`' + statLaunches + '`**.',
