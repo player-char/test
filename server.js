@@ -155,7 +155,7 @@ function setStatus() {
 		client.user.setStatus('invisible');
 	} else {
 		client.user.setStatus('online');
-		client.user.setGame('Discord');
+		client.user.setGame('Discord', {type: 0});
 	}
 }
 
