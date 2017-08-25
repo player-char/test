@@ -305,11 +305,19 @@ var responses = [
 			}
 		},
 	},
+	
+	// ((скобки))
+	{
+		p: /^([^(]*(^|[^(:;x-])\)+(0|н[оу]ль)*|[^)]*(^|[^):;x-])\(+(9|девять)*)$/i,
+		r: 'ты нарушаешь баланс скобок, остановись!',
+	},
+	
 	// вообще в общем
 	{
 		p: /вообщем/i,
 		r: 'нет слова "вообщем", есть только слова "в общем" и "вообще".\nА за написание "вообщем" на старом РандомКрафте модераторы давали кик.',
 	},
+	
 	// dank words
 	{
 		p: /(^|[^а-яё])(сми[щш]но|дратут|пр[еюяё]й?ве[тд]|узбаг|ниасил)/i,
@@ -436,9 +444,9 @@ var responses = [
 	
 	// решение примеров
 	{
-		p: /(^|(?:реши(?: выражение| пример)|сколько(?: будет)?|(?:вы|[пс]о)считай|вычисли) `{0,3})([ ()0-9.*\/+-]*[0-9][ ()0-9.*\/+-]*[*\/+-][ ()0-9.*\/+-]*[0-9][()0-9.*\/+-]*)/i,
+		p: /(^|(?:реши(?: выражение| пример)|сколько(?: будет)?|(?:вы|[пс]о)считай|вычисли) `{0,3})([ ()0-9.*\/^+-]*[0-9][ ()0-9.*\/^+-]*[*\/^+-][ ()0-9.*\/^+-]*[0-9][()0-9.*\/^+-]*)/i,
 		r: (m, flags, floodey) => {
-			let expression = m[2].trim();
+			let expression = m[2].trim().replace(/\^/g, '**');
 			if (!m[1] && expression.match(/^[0-9]+([\/-][0-9]+){1,2}\.?$/)) {
 				// 1-2, 24/7, 2017-08-18 решать не надо
 				return false;
@@ -831,7 +839,7 @@ var responses = [
 	// взорвись
 	{
 		d: true,
-		p: /(^|[^а-яё])((вз|под|над)орвись|(бомба|бабах)ни)([^а-яё]|$)/i,
+		p: /(^|[^а-яё])((вз|под|над)орви(сь)?|(бомба|бабах)ни)([^а-яё]|$)/i,
 		r: 'я тебе не террорист-криперрист.',
 	},
 	
@@ -1144,7 +1152,7 @@ var responses = [
 	
 	// :saw:
 	{
-		p: /(за|вы|рас|от|на|с|пере)?пил[иею]/i,
+		p: /(^|[^а-яё])(за|вы|рас|от|на|с|пере)?пил(и(м|ла?|ть?)?|ю|ен[аоы]?)([^а-яё]|$)/i,
 		r: (m, flags, floodey, message) => {
 			if (customReact(message, 'saw')) {
 				return true;
@@ -1410,6 +1418,11 @@ function checkReply(message, flags) {
 		lc = cutOff(m, lc);
 	}
 	
+	// parsing & removing discord's markdown to creepers green away from here.
+	let parsed = parseMd(lc);
+	// code blocks are ignored by default
+	lc = plainText(parsed, 'c');
+	
 	// text name mentioning
 	m = lc.match(/([,.?!] *|^)(крип((уш|онь)ка|ак?|ер(аст)?)|creep(e[ry]|ah|ie))([,.?!] *|$)/i);
 	if (m) {
@@ -1558,5 +1571,160 @@ client.on('ready', () => {
 
 
 client.login(myToken);
+
+
+
+
+
+// Discord's markdown parser implementation
+
+// WARNING!!!! Don't dive into this code.
+// Code is awful because Discord's markdown behavior is chaotic.
+
+// Seriously, there are a lot of tiny irrational cases and exceptions
+// which are better be not known.
+
+var mdChars = {
+	'`': 'mmc',
+	'*': 'ibt',
+	'_': 'iu',
+	'~': '-s',
+};
+
+// just a part of a parser
+function detectMd(s, i, tag, c) {
+	
+	//console.log(s,';',i,';',tag);
+	// checking formatting type
+	let type = mdChars[tag[0]][tag.length - 1];
+	//console.log(tag,type,c);
+	
+	if (!type || !(type.charCodeAt(0) > 64) || (tag == '*' && !c.trim())) {
+		return null;
+	}
+	
+	// searching the second tag
+	//console.log('!1');
+	let pos = i;
+	while (true) {
+		//console.log(s[pos + tag.length] == tag[0], tag.length < 3, tag != '~~');
+		while (s.substr(pos, tag.length) == tag && s[pos + tag.length] == tag[0] && tag.length < 3 && tag != '~~') {
+			//console.log('skip');
+			pos++;
+		}
+		pos++;
+		if (pos == -1) {
+			return null;
+		}
+		pos = s.indexOf(tag, pos);
+		//console.log('indice: ',pos);
+		if (pos == -1) {
+			return null;
+		}
+		if (s[pos + tag.length] != tag[0] || tag.length >= 3 || tag == '~~') {
+			break;
+		}
+	}
+	
+	//console.log('!2');
+	
+	if (tag == '*' && !s.charAt(pos - 1).trim()) {
+		return null;
+	}
+	
+	// formatting found
+	
+	let inner = s.slice(i, pos);
+	if (tag[0] == '`' && !inner.trim() && (tag.length < 3 || !inner.match(/[^\n]/))) {
+		// surprisingly, these formatting types don't like emptiness, so one more try
+		let newpos = s.indexOf(tag, pos + 1);
+		if (newpos != -1) {
+			pos = newpos;
+		}
+	}
+	
+	return [pos, type];
+}
+
+// parser
+function parseMd(s, style) {
+	let o = {
+		type: style,
+		contents: [],
+	};
+	// don't parse in code blocks
+	if ('mc'.indexOf(style) != -1) {
+		o.contents.push(s);
+		return o;
+	}
+	let i = 0;
+	let last = '';
+	let passed = '';
+	while (i < s.length) {
+		let c = s[i];
+		if (last[0] == c && last.length < 3) {
+			if (last == '\\') {
+				passed += last;
+				last = '';
+			} else {
+				last += c;
+			}
+		} else {
+			// first tag found
+			if (mdChars[last[0]]) {
+				let pos = null;
+				for (let j = 0; j < last.length; j++) {
+					//if (j && i - j == 1 && last[0] == '*') {
+					//	continue;
+					//}
+					pos = detectMd(s, i - j, last.slice(0, last.length - j), c);
+					if (pos) {
+						let inner = parseMd(s.slice(i - j, pos[0]), pos[1]);
+						o.contents.push(passed, inner);
+						s = s.slice(pos[0] + last.length - j);
+						passed = '';
+						last = '';
+						i = 0;
+						break;
+					}
+				}
+				if (pos) {
+					continue;
+				}
+			}
+			
+			if (last == '\\') {
+				last += c;
+				c = '';
+			}
+			passed += last;
+			last = c;
+		}
+		i++;
+	}
+	o.contents.push(passed + last);
+	return o;
+}
+
+// stringifier
+function plainText(o, ignored) {
+	// "ignored" is a string of chars of styles, their content will be ignored
+	let s = [];
+	let c = o.contents;
+	for (let i = 0; i < c.length; i++) {
+		let t = c[i];
+		if (typeof t != 'string') {
+			if (ignored.indexOf(c[i].type) != -1) {
+				continue;
+			}
+			t = plainText(t, ignored);
+			if (c[i].type == 'c') {
+				t = '\n' + t + '\n';
+			}
+		}
+		s += t;
+	}
+	return s;
+}
 
 })();
