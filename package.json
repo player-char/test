@@ -2,7 +2,7 @@
   "name": "creeperdiscordbot",
   "version": "1.1.0",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js --harmony"
   },
   "dependencies": {
     "discord.js": "11.1.0",
