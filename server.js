@@ -502,7 +502,8 @@ var responses = [
 				'неплохо',
 				'безупречно',
 			];
-			let arr = badly.includes(m[2]) || badly.includes(m[3]) ? badly.slice(0, 6) : well;
+			let bad = badly.includes(m[2].toLowerCase()) || badly.includes(m[3].toLowerCase());
+			let arr = bad ? badly.slice(0, 6) : well;
 			return arr.pick() + ['.', '!'].pick();
 		},
 	},
@@ -883,6 +884,12 @@ var responses = [
 		d: true,
 		p: /(^|[^а-яё])(что|сколько|как много|много ли) (ты )?(не )?знаешь[?! ]*$/i,
 		r: 'откуда мне знать, что я знаю?',
+	},
+	// съешь
+	{
+		d: true,
+		p: /^ *((съ|по)?ешь|(с|по|от)?кушай|откуси|отведай)(-ка)?/i,
+		r: 'спасибо, не голоден.',
 	},
 	// на чём работаешь?
 	{
@@ -1566,7 +1573,7 @@ function checkReply(message, flags) {
 	lc = plainText(parsed, 'c');
 	
 	// text name mentioning
-	m = lc.match(/([,.?!] *|^)(крип((уш|онь)ка|ак?|ер(аст)?|ч?ик)|creep(e[ry]|ah|ie))([,.?!] *|$)/i);
+	m = lc.match(/([,.?!] *|^)(крип((уш|онь)ка|ак?|ушек|ер(аст)?|ч?ик)|creep(e[ry]|ah|ie))([,.?!] *|$)/i);
 	if (m) {
 		mentioned = true;
 		lc = cutOff(m, lc);
