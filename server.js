@@ -406,7 +406,7 @@ var responses = [
 	
 	// !!!11!
 	{
-		p: /!1/i,
+		p: /(^|(^|[^<])[^@])!1/i,
 		m: 'react',
 		r: '💉',
 	},
@@ -1287,7 +1287,7 @@ var responses = [
 	
 	// translit
 	{
-		p: /(^|[^а-яёa-z])((gde|[ktd]ak|n[ueia]|nea|netu|da|po|kto|t[ou]t|tam|bil|mne|[kvw]o?|s|pon|sh([oe]l|l[ao])|nad|pered|izi?|ya|[tvm]i|[vw](ot|am)|pri|u?(zh|j)e|i[ld]i|idu|za)([^а-яёa-z]|$)|dava|ladn|syu|prive|chto|4t?o|z(na|d)|(u|pri|[zn]a|[vw]o|pr?o)([sc]h|4|d)|krut|kogd|ponya|kud|meny|pishe|pisa[lt]|tako|ot(?!([ti]|ol))|sli[vwt]|zd[ar]|p?loh|[wv](oob|[zl4]|s[eyi])|dly|o(4|ch)|prost|mo(zh|j)[ne]|horosh|koto|poka|kr(i|ee)p)/i,
+		p: /(^|[!?.,]|\s)(u|[kvw]o?)(\s|[!?.,]|$)|(^|[^а-яёa-z])((gde|[ktd]ak|n[ueia]|nea|netu|da|po|t[ou]t|tam|bil|mne|pon|sh([oe]l|l[ao])|nad|pered|izi?|ya|[tvm]i|[vw](ot|am)|pri|u?(zh|j)e|i[ld]i|idu|za)([^а-яёa-z]|$)|dava|ladn|syu|prive|(ch|[ek])to|4t?o|z(na|d)|(u|pri|[zn]a|[vw]o|pr?o)([sc]h|4|d)|krut|kogd|ponya|kud|meny|pishe|pisa[lt]|tako|ot(?!([ti]|ol))|sli[vwt]|zd[ar]|p?loh|[wv](oob|[zl4]|s[eyi])|dly|o(4|ch)|prost|mo(zh|j)[ne]|horosh|krut|koto|poka|kr(i|ee)p)/i,
 		m: 'react',
 		r: '🤤',
 	},
@@ -1355,7 +1355,7 @@ var responses = [
 	
 	// _SHO_
 	{
-		p: /(^|[^а-яёa-z])_?(sho|шо)_?([^а-яёa-z]|$)/i,
+		p: /(^|[^а-яёa-z])(_?(sho|шо)_?|ду?дос(ер)?ы?|лв|лаки(в[её]рс)?)([^а-яёa-z]|$)/i,
 		m: 'creact',
 		r: 'sho',
 	},
@@ -1485,7 +1485,7 @@ var responses = [
 	// debug info
 	{
 		d: true,
-		p: /^ *((слей|с?кинь|покажи) (инфу|показатели|метрики|данные)|дебаг)( в лс)?[!. ]*$/i,
+		p: /^ *((слей|с?кинь|покажи) (инфу|показатели|метрики|данные)|дебаг|debug)( в лс)?[!. ]*$/i,
 		m: 'dm',
 		r: (m) => {
 			let now = new Date();
@@ -1633,7 +1633,7 @@ function checkReply(message, flags) {
 	
 	// первичная обработка сообщения
 	let mentioned = message.mentions.users.has(myId) || (!message.guild ? 'dm' : false);
-	let lc = message.content.trim();
+	let lc = message.content.trim().replace(/[ \t]+/g, ' ');
 	let m = null;
 	let floodey = message.guild && (floodless.indexOf(message.channel.id) != -1);
 	
