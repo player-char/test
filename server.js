@@ -1287,7 +1287,7 @@ var responses = [
 	
 	// translit
 	{
-		p: /(^|[^a-z])((gde|[ktd]ak|n[ueia]|nea|netu|da|po|kto|t[ou]t|tam|bil|mne|[kvw]o?|s|pon|sh([oe]l|l[ao])|nad|pered|izi?|ya|[tvm]i|[vw](ot|am)|pri|u?(zh|j)e|i[ld]i|idu|za)([^а-яё]|$)|dava|ladn|syu|prive|chto|4t?o|z(na|d)|(u|pri|[zn]a|[vw]o|pr?o)([sc]h|4|d)|krut|kogd|ponya|kud|meny|pishe|pisa[lt]|tako|ot(?!([ti]|ol))|sli[vwt]|zd[ar]|p?loh|[wv](oob|[zl4]|s[eyi])|dly|o(4|ch)|prost|mo(zh|j)[ne]|horosh|koto|poka|kr(i|ee)p)/i,
+		p: /(^|[^а-яёa-z])((gde|[ktd]ak|n[ueia]|nea|netu|da|po|kto|t[ou]t|tam|bil|mne|[kvw]o?|s|pon|sh([oe]l|l[ao])|nad|pered|izi?|ya|[tvm]i|[vw](ot|am)|pri|u?(zh|j)e|i[ld]i|idu|za)([^а-яёa-z]|$)|dava|ladn|syu|prive|chto|4t?o|z(na|d)|(u|pri|[zn]a|[vw]o|pr?o)([sc]h|4|d)|krut|kogd|ponya|kud|meny|pishe|pisa[lt]|tako|ot(?!([ti]|ol))|sli[vwt]|zd[ar]|p?loh|[wv](oob|[zl4]|s[eyi])|dly|o(4|ch)|prost|mo(zh|j)[ne]|horosh|koto|poka|kr(i|ee)p)/i,
 		m: 'react',
 		r: '🤤',
 	},
