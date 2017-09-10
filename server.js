@@ -582,7 +582,7 @@ var responses = [
 	
 	// acid remaining
 	{
-		p: /^ *(?:(?:како[йв]|чему равен|скажи|назови) )кислотный остаток (H)(\d*)([a-z0-9]+)[?!. ]+$/i,
+		p: /^ *(?:(?:како[йв]|чему равен|скажи|назови) )?кислотный остаток (H)(\d{0,2})([a-z0-9]{1,8})[?!. ]*$/i,
 		r: (m) => m[3] + m[2] + '-',
 	},
 	
@@ -1845,7 +1845,8 @@ client.on('ready', () => {
 	
 	myId = client.user.id;
 	
-	for (g of client.guilds) {
+	for (i in client.guilds) {
+		let g = client.guilds[i];
 		console.log([
 			'Guild name: ' + g.name,
 			'Guild id: ' + g.id,
