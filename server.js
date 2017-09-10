@@ -10,7 +10,7 @@ var http = require('http');
 var myToken = process.env.BOT_TOKEN;
 
 // инициализация
-var myId = '311163859580747778';
+var myId = '';
 // floodless channels
 var floodless = [
 	'175956780398936065',
@@ -19,7 +19,6 @@ var floodless = [
 var ignores = [
 	myId,
 ];
-var wrecked = false;
 var hidden = false;
 var timestamps = {
 	norm: -Infinity,
@@ -413,7 +412,7 @@ var responses = [
 	
 	// dank words
 	{
-		p: /(^|[^а-яё])(ыы|афф|азаз|л[ыеуа]л|сми[щш]но|дратут|пей(сат|ш[иеы]т)|пр[еюяё]й?ве[тд]|прифф?(е[тд]|к)|прекол|у?збаг|ниасил|миня|ата(ш[оеё]л|йд)|ухади|(нит|ды|[чшки]та)([^а-яё]|$))/i,
+		p: /(^|[^а-яё])(ыы|афф|з?а+з+а+з+|а+х+а+х+|л[ыеуа]л|сми[щш]но|дратут|пей(сат|ш[иеы]т)|пр[еюяё]й?ве[тд]|прифф?(е[тд]|к)|прекол|у?збаг|ниасил|миня|ата(ш[оеё]л|йд)|ухади|(нит|ды|[чшки]та)([^а-яё]|$))/i,
 		m: 'react',
 		r: '💉',
 	},
@@ -756,8 +755,15 @@ var responses = [
 	// совсем уже вообще того что ли?
 	{
 		d: true,
-		p: /^ *([тв]ы )?(совсем|в(о[оа]?б|а)ще|того|(не )? в (бес)?порядке)/i,
+		p: /^ *([тв]ы )?(совсем|в(о[оа]?б|а)ще|того|(не )?в (бес)?порядке)/i,
 		r: 'я в порядке, тебе померещилось.',
+	},
+	
+	// тебя надо
+	{
+		d: true,
+		p: /(^|[^а-яё])([а-яё]+[аеиуяос]ть тебя|тебя [а-яё]+[аеиуяос]ть)([^а-яё]|$)/i,
+		r: 'за что это меня так?',
 	},
 	
 	// видно - обидно
@@ -949,6 +955,13 @@ var responses = [
 		r: 'здесь и живу.',
 	},
 	
+	// номер телефона?
+	{
+		d: true,
+		p: /(^|[^а-яё])(скажи|напиши|с?кинь|оставь|((у тебя )?есть( ли)?|какой)( у тебя)?) (свой )?(номер телефона|телефонный номер)( у тебя)?[?!. ]*$/i,
+		r: 'NaN.',
+	},
+	
 	// девушка?
 	{
 		d: true,
@@ -960,7 +973,7 @@ var responses = [
 	{
 		d: true,
 		p: /(^|[^а-яё])(кем (ты )?работаешь|какая (у тебя )?(профессия|работа|должность))[?! ]*$/i,
-		r: 'Floodey bot.',
+		r: 'крипер.',
 	},
 	// зарплата?
 	{
@@ -1041,14 +1054,22 @@ var responses = [
 	// congrats
 	{
 		d: true,
-		p: /^ *поздравляю( тебя)?( с([^а-яё])|[!.]*$)/i,
+		p: /^ *поздравляю( тебя)?( с([^а-яё])|[!. ]*$)/i,
 		r: 'спасибо.',
 	},
+	
 	// thx
 	{
 		d: true,
 		p: /^ *((больш|огром(ен)?н)ое )?((тебе|вам) )?спасибо( (тебе|вам))?( (больш|огром(ен)?н)ое)?([^а-яё]|$)/i,
 		r: 'пожалуйста.',
+	},
+	
+	// be healthy
+	{
+		d: true,
+		p: /^ *(не (болей|кр[ау]ш((ай)?ся|ись)|(страд|пад|уныв|сдых|умир)ай( духом)?|(покид|брос)ай (нас|меня))|живи|будь (здоров|онлайн|с нами|со мной))[!. ]*$/i,
+		r: 'спасибо, постараюсь.',
 	},
 	
 	// футгол
@@ -1287,15 +1308,15 @@ var responses = [
 	
 	// translit
 	{
-		p: /(^|[!?.,]|\s)(u|[kvw]o?)(\s|[!?.,]|$)|(^|[^а-яёa-z])((gde|[ktd]ak|n[ueia]|nea|netu|da|po|t[ou]t|tam|bil|mne|pon|sh([oe]l|l[ao])|nad|pered|izi?|ya|[tvm]i|[vw](ot|am)|pri|u?(zh|j)e|i[ld]i|idu|za)([^а-яёa-z]|$)|dava|ladn|syu|prive|(ch|[ek])to|4t?o|z(na|d)|(u|pri|[zn]a|[vw]o|pr?o)([sc]h|4|d)|krut|kogd|ponya|kud|meny|pishe|pisa[lt]|tako|ot(?!([ti]|ol))|sli[vwt]|zd[ar]|p?loh|[wv](oob|[zl4]|s[eyi])|dly|o(4|ch)|prost|mo(zh|j)[ne]|horosh|krut|koto|poka|kr(i|ee)p)/i,
+		p: /(^|[!?.,]|\s)(u|[kvw]o?|da)(\s|[!?.,]|$)|(^|[^а-яёa-z])((gde|[ktd]ak|n[ueia]|nea|netu|po|t[ou]t|tam|bil|mne|pon|sh([oe]l|l[ao])|nad|pered|izi?|ya|[tvm]i|[vw](ot|am)|pri|u?(zh|j)e|i[ld]i|idu|za)([^а-яёa-z]|$)|dava|ladn|syu|prive|(ch|[ek])to|4t?o|z(na|d)|(u|pri|[zn]a|[vw]o|pr?o)([sc]h|4|d)|krut|kogd|ponya|kud|meny|pishe|pisa[lt]|tako|ot(?!([ti]|ol))|sli[vwt]|zd[ar]|p?loh|[wv](oob|[zl4]|s[eyi])|dly|o(4|ch)|prost|gotov|kone|mo(zh|j)[ne]|horosh|krut|koto|poka|kr(i|ee)p)/i,
 		m: 'react',
 		r: '🤤',
 	},
 	
 	// оратор-куратор
 	{
-		p: /(^|[^а-яё])ору([^а-яё]|$)/i,
-		r: 'ты орёшь или смеёшься?',
+		p: /(^|[^а-яё]) *ору([^а-яё]|$)[!. ]*/i,
+		r: (m) => m.input == m[0] ? 'оратор из тебя, к сожалению, никакой.' : 'ты орёшь или смеёшься?',
 	},
 	
 	// кастит
@@ -1316,6 +1337,20 @@ var responses = [
 		p: /(^|[^а-яё])((?:крип[а-яё]+|[тв]ы) )?(?:[-‒–—―] )?(?:(?:туп|пл[ао]х|н[еи] ?хорош)[а-яё]*|б[яа]к[аи])( крип[а-яё]+)?/i,
 		m: 'react',
 		r: (m) => (m[2] || m[3] ? '😭' : false),
+	},
+	
+	// reestr zopreschennykh words
+	{
+		p: /(^|[^а-яё])(с(у[ийе]+цид|амоуб[ие])|s(u|oo)icide|по+рн|про+н([^а-яё]|$)|н[ао]рк[ао]т|[сз]пайс)/i,
+		m: 'creact',
+		r: 'rkn',
+	},
+	
+	// фразы Сакуи
+	{
+		p: /(^|[^а-яёa-z])(поговорите со мной|где вы все|как же мне здесь одиноко|здравсвтуй)([^а-яёa-z]|$)/i,
+		m: 'creact',
+		r: 'sakuya',
 	},
 	
 	// :ясно:
@@ -1770,54 +1805,40 @@ function processMessage(message) {
 	}
 }
 
-// при сообщениях
-client.on('message', message => {
-	if (wrecked || message.system || message.author.bot || message.author.id == myId) {
-		return;
-	}
-	
-	try {
-		
-		/*
-		if (typeof mus != 'undefined' && message.guild && mus[message.guild.id] && mus[message.guild.id].tid == message.channel.id) {
-			//musicProcess(message);
-			
-			return;
-		}
-		*/
-		
-		// delay is necessary for correct message ordering
-		// because sometimes bot is too fast
-		setTimeout(processMessage, 80, message);
-		
-	} catch(e) {
-		console.error(e);
-		//wrecked = true;
-		//message.reply(e.name + ': ' + e.message);
-	}
-});
 
 // сразу, как зайдёт
 client.on('ready', () => {
 	console.log('I am ready!');
+	
+	myId = client.user.id;
+	
+	for (g of client.guilds) {
+		console.log([
+			'Guild name: ' + g.name,
+			'Guild id: ' + g.id,
+			'Owner id: ' + g.ownerID,
+			'',
+		].join('\n'));
+	}
 	setStatus();
+	
+	// при сообщениях
+	client.on('message', message => {
+		if (message.system || message.author.bot || message.author.id == myId) {
+			return;
+		}
+		
+		// delay is necessary for correct message ordering
+		// because sometimes bot is too fast
+		setTimeout(processMessage, 100, message);
+	});
 });
-
 
 client.login(myToken);
 
 
 
-
-
 // Discord's markdown parser implementation
-
-// WARNING!!!! Don't dive into this code.
-// Code is awful because Discord's markdown behavior is chaotic.
-
-// Seriously, there are a lot of tiny irrational cases and exceptions
-// which are better be not known.
-
 var mdChars = {
 	'`': 'mmc',
 	'*': 'ibt',
