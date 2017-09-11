@@ -20,10 +20,7 @@ var ignores = [
 	myId,
 ];
 var hidden = false;
-var timestamps = {
-	norm: -Infinity,
-	good: -Infinity,
-};
+var timestamps = {};
 
 var floodeys = {}; // объект для запоминания
 var floodrate = 5; // штрафных секунд за сообщение
@@ -570,7 +567,10 @@ var responses = [
 	{
 		p: /(^|[^а-яё])нормально([^а-яё]|$)/i,
 		r: 'нормально или хорошо?',
-		t: ['norm', 75000],
+		t: {
+			name: 'norm',
+			wait: 75000,
+		},
 	},
 	
 	// good
@@ -578,7 +578,10 @@ var responses = [
 		p: /(^|[^а-яё])хорошо([^а-яё]|$)/i,
 		r: 'хорошо или замечательно?',
 		c: 0.6,
-		t: ['good', 75000],
+		t: {
+			name: 'good',
+			wait: 75000,
+		},
 	},
 	
 	// bug
