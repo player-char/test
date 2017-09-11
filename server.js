@@ -458,7 +458,7 @@ var responses = [
 			name: 'goodnight',
 			wait: 300000,
 			m: 'react',
-			r: '👋',
+			r: '🌃',
 		},
 	},
 	
@@ -1771,7 +1771,7 @@ function checkReply(message, flags) {
 		
 		// check cooldown
 		let source = item;
-		let record;
+		let record = null;
 		
 		if (item.t) {
 			if (!timestamps[uid]) {
@@ -1810,7 +1810,7 @@ function checkReply(message, flags) {
 		
 		// set cooldown
 		if (record) {
-			record[item.t.name] = now + item.t.time;
+			record[item.t.name] = now + item.t.wait;
 			timestamps[uid] = record;
 		}
 		
