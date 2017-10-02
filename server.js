@@ -1818,7 +1818,7 @@ var responses = [
 
 // крипушки ответ на сообщение
 function finalReply(message, method, text, opt) {
-	if (m != '+' && (m != 'r' || !message.guild)) {
+	if (method != '+' && (method != 'r' || !message.guild)) {
 		// Capitalizing
 		text = text.slice(0, 1).toUpperCase() + text.slice(1);
 	}
