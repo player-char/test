@@ -30,11 +30,11 @@ let hidden = false;
 let timestamps = {};
 
 let floodeys = {}; // объект для запоминания
-let floodrate = 5; // штрафных секунд за сообщение
-let floodmax = 20; // штрафных секунд для получения игнора
+let floodrate = 5 * 1000; // штрафных миллисекунд за сообщение
+let floodmax = 20 * 1000; // штрафных миллисекунд для получения игнора
 let floodchills = 2; // сколько чиллаутов писать перед игнором
 
-let attdelay = 110; // секунд для реагирования без призывания
+let attdelay = 110 * 1000; // миллисекунд для реагирования без призывания
 
 let since = Date.now();
 that.statLaunches = +!!that.statLaunches + 1;
@@ -2127,13 +2127,13 @@ function checkReply(message) {
 		fdata.chills = 0;
 		score = 0;
 	}
-	score += floodrate * 1000;
+	score += floodrate;
 	fdata.time = now + score;
 	if (fdata.chills >= floodchills) {
 		// игнорим месседж
 		return false;
 	}
-	if (score > floodmax * 1000) {
+	if (score > floodmax) {
 		// выдаём предупреждение
 		fdata.chills++;
 		let resp = [
@@ -2150,6 +2150,7 @@ function checkReply(message) {
 	// первичная обработка сообщения
 	let mentioned = message.mentions.users.has(myId) || (!message.guild ? 'dm' : false);
 	let place = message.channel.id;
+	let attentive = fdata.attention > now && fdata.attplace == place && !message.mentions.users.size;
 	let lc = message.content.trim().replace(/\s+/g, ' ');
 	let m = null;
 	let floodey = message.guild && floodless[junkize(message.channel.id)];
@@ -2189,7 +2190,6 @@ function checkReply(message) {
 	// проверка по базе
 	for (let item of responses) {
 		// direct or not?
-		let attentive = fdata.attention > now && fdata.attplace == place && !message.mentions.users.size;
 		if (!mentioned) {
 			if (item.d === 'required') {
 				continue;
