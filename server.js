@@ -2378,7 +2378,7 @@ function processMessage(message) {
 					}
 					
 					console.log(new Date);
-					console.log('Promise failed: ' + err + ' (' + err.code + ') on phrase', message.content, 'sent by user ' + message.user.id);
+					console.log('Promise failed: ' + err + ' (' + err.code + ') on phrase', message.content, 'sent by user ' + message.author.id);
 				});
 			}
 		}
