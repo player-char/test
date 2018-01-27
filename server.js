@@ -17,7 +17,7 @@ const http = require('http');
 const myToken = process.env.BOT_TOKEN;
 
 // инициализация
-const myID = '';
+let myID = null;
 // floodless channels
 const floodless = {
 	'125781936704322802': true,
