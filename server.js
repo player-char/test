@@ -3,49 +3,58 @@
 var that = that || {};
 
 (function(that) {
-let Discord = require('discord.js');
-let client = new Discord.Client();
+that.statLaunches = +!!that.statLaunches + 1;
 
-let https = require('https');
-let http = require('http');
+const Discord = require('discord.js');
+const client = new Discord.Client();
+
+const https = require('https');
+const http = require('http');
 
 //let that = this;
 //console.log(that);
 
-let myToken = process.env.BOT_TOKEN;
+const myToken = process.env.BOT_TOKEN;
 
 // инициализация
-let myId = '';
+const myID = '';
 // floodless channels
-let floodless = {
+const floodless = {
 	'125781936704322802': true,
 };
 // users to don't disturb
-let leavemealones = {
-	'233821147089184123': true,
-	'295847012910215214': true,
+const leavemealones = {
+	//'233821147089184123': true,
+	//'295847012910215214': true,
 };
 
+// объект с данными на каждого пользователя,
+// который что-либо писал в этой сессии.
+const userDB = {};
+
 let hidden = false;
-let timestamps = {};
 
-let floodeys = {}; // объект для запоминания
-let floodrate = 5 * 1000; // штрафных миллисекунд за сообщение
-let floodmax = 20 * 1000; // штрафных миллисекунд для получения игнора
-let floodchills = 2; // сколько чиллаутов писать перед игнором
+const floodRate = 5 * 1000; // штрафных миллисекунд за сообщение
+const floodMax = 20 * 1000; // штрафных миллисекунд для получения игнора
+const floodChillsMax = 2; // сколько чиллаутов писать перед игнором
 
-let attdelay = 110 * 1000; // миллисекунд для реагирования без призывания
+const attDelay = 110 * 1000; // миллисекунд для реагирования без призывания
 
-let since = Date.now();
-that.statLaunches = +!!that.statLaunches + 1;
-let stat = {
+const since = Date.now();
+const stat = {
 	readCount: 0,
 	replyCount: 0,
 	readCountDM: 0,
 	replyCountDM: 0,
+	
+	replySuccessCount: 0,
+	replyFailCount: 0,
+	replyBlockCount: 0,
+	
 	chillCount: 0,
 	mentionCount: 0,
 	errorCount: 0,
+	
 	timeSum: 0,
 	timeMax: 0,
 	timeLast: 0,
@@ -73,7 +82,7 @@ Object.defineProperty(String.prototype, 'spick', {value: function(rand) {
 	return this.split(' ').pick(rand);
 }});
 
-let months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
 
 // приблизительное время создания снежинки
 function sfTime(s) {
@@ -85,8 +94,8 @@ function sfGet(n) {
 	return String((n - 1420070400000) * 4194304);
 }
 
-let timezoneOffset = 3;
-let timezoneSuffix = ' МСК';
+const timezoneOffset = 3;
+const timezoneSuffix = ' МСК';
 
 // читабельное числовое время в текущей таймзоне
 function dateStr(d) {
@@ -104,7 +113,7 @@ function dateDay(d) {
 
 // формы множественного числа
 function pluralize(n, arr) {
-	let k = n % 10;
+	const k = n % 10;
 	return arr[(n - k) / 10 % 10 != 1 ? (k != 1 ? ([2, 3, 4].includes(k) ? 1 : 2) : 0) : 2];
 }
 
@@ -113,23 +122,23 @@ function dateDiff(diff, plain) {
 	// предполагается, что промежуток должен быть > 0
 	//let diff = d2 - d1;
 	
-	let tarr = [1000, 60, 60, 24, 7, Infinity];
+	const tarr = [1000, 60, 60, 24, 7, Infinity];
 	for (let i in tarr) {
-		let x = tarr[i];
+		const x = tarr[i];
 		tarr[i] = diff % x;
 		diff = (diff - tarr[i]) / x;
 	}
 	
 	tarr.shift(); // убираем миллисекунды
 	
-	let warr = [
+	const warr = [
 		[plain ? 'секунда' : 'секунду', 'секунды', 'секунд'],
 		[plain ? 'минута' : 'минуту', 'минуты', 'минут'],
 		['час', 'часа', 'часов'],
 		['сутки', 'суток', 'суток'],
 		[plain ? 'неделя' : 'неделю', 'недели', 'недель'],
 	];
-	let sarr = [];
+	const sarr = [];
 	
 	for (let i = 4; i >= 0; i--) {
 		if (!tarr[i]) {
@@ -241,7 +250,7 @@ function setStatus() {
 function customReact(message, name) {
 	if (message.guild) {
 		// ищем в текущем месте
-		let map = message.guild.emojis;
+		const map = message.guild.emojis;
 		for (let i of map) {
 			if (i[1].name == name) {
 				return message.react(i[1]);
@@ -250,7 +259,7 @@ function customReact(message, name) {
 	}
 	
 	// потом ищем повсюду
-	let all = client.emojis;
+	const all = client.emojis;
 	for (let i of all) {
 		if (i[1].name == name) {
 			return message.react(i[1]);
@@ -263,7 +272,7 @@ function customReact(message, name) {
 }
 
 // база знаний
-let known = {
+const known = {
 	'руль?т|rult': ['c', 'snetus'],
 	'нами|namiya': 'Намия не умеет строить. Не пишите ей по этому поводу. Она вам не поможет.',
 	'камк|kamka': 'Камка — это та, которая любит, когда что-то горит.',
@@ -379,10 +388,10 @@ let known = {
 	'флуд|flood': 'флуд — наводнение информационных и не только информационных каналов.',
 	'спам|spam': (m) => {
 		// ну сами напросились
-		var spam = m[1].toLowerCase();
-		var slam = spam[0].toUpperCase() + spam.slice(1);
+		const spam = m[1].toLowerCase();
+		const slam = spam[0].toUpperCase() + spam.slice(1);
 		
-		var mail = spam + ' — ' + spam;
+		let mail = spam + ' — ' + spam;
 		while (mail.length < 950) {
 			mail += chance(0.8) ? (chance(0.8) ? ' ' : ['-', ', '].pick()) + spam : '. ? !'.spick() + (chance(0.2) ? '\n\n \n'.spick() : ' ') + slam;
 		}
@@ -420,7 +429,7 @@ let known = {
 };
 
 // массив с базой данных того, на что бот реагирует
-let responses = [
+const responses = [
 	
 	/*
 	
@@ -778,7 +787,7 @@ let responses = [
 	
 	// dank words
 	{
-		p: /(^|[^а-яё])(ч[ёео]-?нить|пели(л|ть)|[ыъь]{2,}|афф|з*а+з+а+з+|а+х+а+х+|л[ыуа]л|лел[ьлок]|сми[щш]но|дратут|пей(сат|ш[иеы]т)|пр[еюяё]й?ве[тд]|прифф?(е[тд]|к)|прекол|у?збаг|ниасил|миня|ата(ш[оеё]л|йд)|ухади|(нит|ды|[мт]я|[мтв]и|[чшки]та|(те([бп]е)?|мн[еи]|[еи](й|му?)|нам) плоха)([^а-яё]|$))|^[^а-яёa-z'"]*ы[^а-яёa-z'"]*$/i,
+		p: /(^|[^а-яё])(ч[ёео]-?нить|пели(л|ть)|[ыъь]{2,}|афф|з*а+з+а+з+|а+х+а+х+|л[ыа]л|лулз|лел[ьлок]|сми[щш]но|дратут|пей(сат|ш[иеы]т)|пр[еюяё]й?ве[тд]|прифф?(е[тд]|к)|прекол|у?збаг|ниасил|миня|ата(ш[оеё]л|йд)|ухади|(нит|ды|[мт]я|[мтв]и|[чшки]та|(те([бп]е)?|мн[еи]|[еи](й|му?)|нам) плоха)([^а-яё]|$))|^[^а-яёa-z'"]*ы[^а-яёa-z'"]*$/i,
 		r: ['+', '💉'],
 	},
 	
@@ -1325,7 +1334,7 @@ let responses = [
 	{
 		d: true,
 		p: /(^|[^а-яё])(когда|какого числа) ((у тебя|тво[йёе]) )?(день рожден[иь]я|днюха|др)[!?., ]*$/i,
-		r: () => dateDay(sfTime(myId)) + '.',
+		r: () => dateDay(sfTime(myID)) + '.',
 	},
 	
 	// когда я зарегался?
@@ -1341,7 +1350,7 @@ let responses = [
 		p: /(^|[^а-яё])(когда|какого числа) (был[ао]? |ты )?((зарег(истриров)?|созд|сдел)а(н[ао]?|л(и|ся|[аои]сь)))( (пользователь|юзер|канал|снежинка|id))?\s+(\\?<?\\?(@[!&]?|#|:[^:]+:)?(\d{1,20})>?)?[!?., ]*$/i,
 		r: (m) => {
 			let id = m[13];
-			if (!id || id == myId) {
+			if (!id || id == myID) {
 				return 'когда мне в майн играть надоело.';
 			}
 			let t = sfTime(id);
@@ -1771,7 +1780,7 @@ let responses = [
 	
 	// чому бы и нет?
 	{
-		p: /(^|[^а-яё])(чому|угу|лел(?!е[яи])|ну ок|прив)([^а-яё]|$)/i,
+		p: /(^|[^а-яё])(чому|угу|л[еу]л|ну ок|прив)([^а-яё]|$)/i,
 		r: ['c', 'snetus'],
 	},
 	
@@ -1924,13 +1933,13 @@ let responses = [
 	
 	// win
 	{
-		p: /(^|[^а-яё])(я|мы) (победи|выигра|затащи|сдела|успе)л/i,
+		p: /(^|[^а-яё])(я|мы) (победи|выигра|затащи|(с|до)дела|успе)л/i,
 		r: () => ['+', '🏅 🏅 🏅 🏆 🍌 🐩 📯 🎺'.spick()],
 	},
 	
 	// dropical trink
 	{
-		p: /(^|[^а-яё])(кастер|сок([^а-яё]|$)|juic)/i,
+		p: /(^|[^а-яёa-z])(кастер|сок([^а-яё]|$)|juic)/i,
 		c: 0.5,
 		r: ['+', '🍹'],
 	},
@@ -2015,24 +2024,37 @@ let responses = [
 		d: true,
 		p: /^ *((слей|с?кинь|покажи) (инфу|показатели|метрики|данные)|дебаг|debug)( в лс)?[!. ]*$/i,
 		r: (m) => {
-			let now = new Date();
+			const nowDate = new Date();
 			return ['d', [
 				'слив инфы о работе (за данный сеанс):',
 				'',
-				'Я онлайн уже **`' + dateDiff(+now - since) + '`**.',
+				'Я онлайн уже **`' + dateDiff(+nowDate - since) + '`**.',
 				'Время на моих часах при запуске:\n**`' + dateStr(since) + '`**.',
-				'Время на моих часах сейчас:\n**`' + dateStr(now) + '`**.',
+				'Время на моих часах сейчас:\n**`' + dateStr(nowDate) + '`**.',
 				'',
+				'**[Сообщения]**',
 				'Ответов/запросов всего: **`' + stat.replyCount + '/' + stat.readCount + '`**.',
 				'Ответов/запросов из лс: **`' + stat.replyCountDM + '/' + stat.readCountDM + '`**.',
+				'',
+				'Ответов доставлено: **`' + stat.replySuccessCount + '`**.',
+				'Ответов провалено:  **`' + stat.replyFailCount + '`**.',
+				'Ответов заблочено:  **`' + stat.replyBlockCount + '`**.',
+				'',
 				'Чиллаутов выдано: **`' + stat.chillCount + '`**.',
 				'Призываний: **`' + stat.mentionCount + '`**.',
-				'',
-				'Последнее время сверки: **`' + stat.timeLast + ' мс`**.',
-				'Среднее время сверки: **`' + (stat.timeSum / stat.readCount).toFixed(2) + ' мс`**.',
-				'Наибольшее время сверки: **`' + stat.timeMax + ' мс`**.',
 				'Наибольшее время простоя:\n**`' + dateDiff(stat.waitMax, true) + '`**.',
 				'',
+				'**[Время сверки]**',
+				'Последнее:  **`' + stat.timeLast + ' мс`**.',
+				'Среднее:    **`' + (stat.timeSum / stat.readCount).toFixed(2) + ' мс`**.',
+				'Наибольшее: **`' + stat.timeMax + ' мс`**.',
+				'',
+				'**[Время доставки]**',
+				'Последнее:  **`' + stat.timeSendLast + ' мс`**.',
+				'Среднее:    **`' + (stat.timeSendSum / stat.replySuccessCount).toFixed(2) + ' мс`**.',
+				'Наибольшее: **`' + stat.timeSendMax + ' мс`**.',
+				'',
+				'**[Прочее]**',
 				'Шишек набито при запросе: **`' + stat.errorCount + '`**.',
 				'Запусков в этой сессии: **`' + that.statLaunches + '`**.',
 			].join('\n')];
@@ -2050,8 +2072,15 @@ let responses = [
 	// thinkin' hard
 	{
 		d: true,
-		p: /(^|[^а-яёa-z])(смысл|жи(зн|ть)|существова|не(ясн|понятн|извест)|вселенн|галакт|мир|невозмож|порож?д|загад|тайн|проблем|заговор|подозр)/i,
+		p: /(^|[^а-яёa-z])(смысл|жи(зн|ть)|существова|не(ясн|понятн|извест)|вселенн|галакт|мир|невозмож|порож?д|загад|тайн|проблем|заговор|подозр)|.../i,
 		r: ['+', '🤔'],
+	},
+	
+	// think failed
+	{
+		d: true,
+		p: /(^|[^а-яёa-z])((по)?чему|чего|как(о([йе]|го)|ая|и(е|ми))?|что)(?![а-яёa-z])[^!?]*[!?]+/i,
+		r: ['+', '🤷'],
 	},
 	
 	// если просто призвали
@@ -2090,7 +2119,7 @@ function finalReply(message, method, text, opt) {
 		text = text.slice(0, 1).toUpperCase() + text.slice(1);
 	}
 	
-	let f = {
+	const f = {
 		'r': () => message.reply(text, opt), // reply w/ @mention
 		's': () => message.channel.send(text, opt), // just say
 		'd': () => message.author.send(text, opt), // force private conversation
@@ -2108,34 +2137,40 @@ function finalReply(message, method, text, opt) {
 
 // чем отвечать будем
 function checkReply(message) {
-	let now = Date.now();
-	let uid = message.author.id;
+	const now = Date.now();
+	const uid = message.author.id;
 	
-	// антифлуд-система
-	if (!floodeys[uid]) {
-		floodeys[uid] = {
-			time: now,
-			chills: 0,
-			attention: -Infinity,
-			attplace: null,
+	// заводим личное дело на пользователя, если его ещё нет
+	if (!userDB[uid]) {
+		userDB[uid] = {
+			ftime: -Infinity, // таймстемп ожидания флуда
+			fchills: 0, // предупреждений за текущий акт флуда
+			
+			attention: -Infinity, // таймстемп ожидания сообщений без обращений
+			attplace: null, // последний канал общения без обращений
+			
+			timestamps: {}, // объект с таймстемпами реакций с куллдауном
 		};
 	}
+	const udata = userDB[uid];
 	
-	let fdata = floodeys[uid];
-	let score = fdata.time - now;
+	
+	// антифлуд-система
+	let score = udata.ftime - now;
 	if (score < 0) {
-		fdata.chills = 0;
+		udata.fchills = 0;
 		score = 0;
 	}
-	score += floodrate;
-	fdata.time = now + score;
-	if (fdata.chills >= floodchills) {
+	score += floodRate;
+	udata.ftime = now + score;
+	
+	if (udata.fchills >= floodChillsMax) {
 		// игнорим месседж
 		return false;
 	}
-	if (score > floodmax) {
+	if (score > floodMax) {
 		// выдаём предупреждение
-		fdata.chills++;
+		udata.fchills++;
 		let resp = [
 			'достаточно набивать сообщения!',
 			'you are being rate limited!',
@@ -2148,25 +2183,25 @@ function checkReply(message) {
 	}
 	
 	// первичная обработка сообщения
-	let mentioned = message.mentions.users.has(myId) || (!message.guild ? 'dm' : false);
-	let place = message.channel.id;
-	let attentive = fdata.attention > now && fdata.attplace == place && !message.mentions.users.size;
-	let lc = message.content.trim().replace(/\s+/g, ' ');
-	let m = null;
-	let floodey = message.guild && floodless[junkize(message.channel.id)];
+	const place = message.channel.id;
+	const attentive = udata.attention > now && udata.attplace == place && !message.mentions.users.size;
+	const floodey = message.guild && floodless[junkize(place)];
 	
-	cutOff = (m, lc) => (m.index ? (lc.slice(0, m.index) + ', ') : '') + lc.slice(m.index + m[0].length);
+	let mentioned = message.mentions.users.has(myID) || (!message.guild ? 'dm' : false);
+	let lc = message.content.trim().replace(/\s+/g, ' ');
+	
+	let m = null;
+	const cutOff = (m, lc) => (m.index ? (lc.slice(0, m.index) + ', ') : '') + lc.slice(m.index + m[0].length);
 	
 	// @mentioning
-	m = lc.match('<@' + myId + '>[!?., ]*');
+	m = lc.match('<@' + myID + '>[!?., ]*');
 	if (m) {
 		lc = cutOff(m, lc);
 	}
 	
 	// parsing & removing discord's markdown to creepers green away from here.
-	let parsed = parseMd(lc);
 	// code blocks are ignored by default
-	lc = plainText(parsed, 'c');
+	lc = plainText(parseMd(lc), 'c');
 	
 	// text name mentioning
 	m = lc.match(/([,.?!] *|^)(крип(([оау]н[ья]|ус[яь])(ка)?|а[ксн]?|у(ш(е(к|нька)|онок)?|ха)|[её]р(аст)?|ч?ик|стер|ок|уа)|creep(e[ry]|ah|ie))([,.?!] *|$)/i);
@@ -2220,10 +2255,7 @@ function checkReply(message) {
 		let record = null;
 		
 		if (item.t) {
-			if (!timestamps[uid]) {
-				timestamps[uid] = {};
-			}
-			record = timestamps[uid];
+			record = udata.timestamps;
 			
 			if (record[item.t.name] > now) {
 				// will be false if record[item.t.name] is undefined
@@ -2251,7 +2283,7 @@ function checkReply(message) {
 		// set cooldown
 		if (record) {
 			record[item.t.name] = now + item.t.wait;
-			timestamps[uid] = record;
+			udata.timestamps = record;
 		}
 		
 		// выделение из ответа текста и примесей
@@ -2280,8 +2312,8 @@ function checkReply(message) {
 			
 			// продлеваем внимание, чтобы второй раз призывать не требовалось
 			if (message.guild && (mentioned || attentive)) {
-				fdata.attention = now + attdelay;
-				fdata.attplace = place;
+				udata.attention = now + attDelay;
+				udata.attplace = place;
 			}
 			
 			return finalReply(message, method, resp, opt);
@@ -2302,19 +2334,19 @@ function checkReply(message) {
 function processMessage(message) {
 	try {
 		// stats before
-		let start = Date.now();
+		const start = Date.now();
 		
-		let waited = start - stat.waitLast;
+		const waited = start - stat.waitLast;
 		if (stat.waitMax < waited) {
 			stat.waitMax = waited;
 		}
 		stat.waitLast = start;
 		
 		// крипера ответ
-		let replied = checkReply(message);
+		const replied = checkReply(message);
 		
 		// stats after
-		let end = Date.now();
+		const end = Date.now();
 		
 		stat.readCount++;
 		stat.readCountDM += +!message.guild;
@@ -2324,9 +2356,37 @@ function processMessage(message) {
 			}
 			stat.replyCount++;
 			stat.replyCountDM += +!message.guild;
+			
+			if (replied.then) {
+				replied.then(() => {
+					// successfully sent
+					stat.replySuccessCount++;
+					
+					stat.timeSendLast = Date.now() - end;
+					stat.timeSendSum += stat.timeSendLast;
+					if (stat.timeSendMax < stat.timeSendLast) {
+						stat.timeSendMax = stat.timeSendLast;
+						console.log(new Date);
+						console.log('Max sending time achieved: ' + stat.timeSendLast + ' ms on phrase', message.content);
+					}
+				}).catch((err) => {
+					// failed to send
+					stat.replyFailCount++;
+					if (String(err).match(/block/)) {
+						stat.replyBlockCount++;
+					}
+					
+					console.log(new Date);
+					console.log(
+						'Promise failed: ' + err + ' (' + err.code + ') on phrase',
+						message.content,
+						'sent by user ' + message.user.id,
+					);
+				})
+			}
 		}
 		
-		stat.mentionCount += +message.mentions.users.has(myId);
+		stat.mentionCount += +message.mentions.users.has(myID);
 		
 		stat.waitLast = end;
 		
@@ -2334,10 +2394,12 @@ function processMessage(message) {
 		stat.timeSum += stat.timeLast;
 		if (stat.timeMax < stat.timeLast) {
 			stat.timeMax = stat.timeLast;
-			console.log('Max time achieved: ' + stat.timeLast + ' ms on phrase', message.content);
+			console.log(new Date);
+			console.log('Max checking time achieved: ' + stat.timeLast + ' ms on phrase', message.content);
 		}
 		
 	} catch(e) {
+		console.log(new Date);
 		console.log('Error got on phrase', message.content);
 		console.error(e);
 		stat.errorCount++;
@@ -2351,14 +2413,14 @@ that.alreadyLaunched = !!that.alreadyLaunched;
 client.on('ready', () => {
 	console.log('I am ready!');
 	
-	myId = client.user.id;
+	myID = client.user.id;
 	setStatus();
 	
 	if (!that.alreadyLaunched) {
 		that.alreadyLaunched = true;
 		// при сообщениях
 		client.on('message', message => {
-			if (message.system || message.author.bot || message.author.id == myId) {
+			if (message.system || message.author.bot || message.author.id == myID) {
 				return;
 			}
 			
