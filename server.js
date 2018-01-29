@@ -550,6 +550,12 @@ const responses = [
 	
 	*/
 	
+	// miхеd lеttеrs
+	{
+		p: /[a-zA-ZÀ-ʯ][ΐ-ѿ]|[ΐ-ѿ][a-zA-ZÀ-ʯ]/,
+		r: ['+', '😏'],
+	},
+	
 	// creeper's response
 	{
 		d: true,
