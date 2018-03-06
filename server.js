@@ -2588,10 +2588,11 @@ client.on('ready', () => {
 				'R.I.P. `' + dateStr(msgDate) + '` — `' + dateStr(nowDate) + '`',
 			].join('\n');
 			
+			// пишем в лог, может внезапно понадобиться при катастрофах
 			console.log(delText);
-			console.log(message.guild.name, message.author.name, message.content);
+			console.log(message.guild.name, '|', message.author.name, '|', message.content);
 			
-			if (junkize(message.guild) == '989760851786195955') {
+			if (['125781936704322802', '329993672745624426'].indexOf(junkize(message.channel.id)) != -1) {
 				message.channel.send(delText);
 			}
 		});
