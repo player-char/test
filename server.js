@@ -2588,7 +2588,8 @@ client.on('ready', () => {
 				'R.I.P. `' + dateStr(msgDate) + '` — `' + dateStr(nowDate) + '`',
 			].join('\n');
 			
-			console.log(delText. message.content, message.guild.name);
+			console.log(delText);
+			console.log(message.guild.name, message.author.name, message.content);
 			
 			if (junkize(message.guild) == '989760851786195955') {
 				message.channel.send(delText);
