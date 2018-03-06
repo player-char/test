@@ -160,7 +160,7 @@ function formatIntervals(warr, diff, limit) {
 function dateDiff(diff, plain) {
 	// точный промежуток до недель
 	const weeks = formatIntervals([
-		[plain ? 'миллисекунда' : 'миллисекунду', 'миллисекунды', 'миллисекунд'],
+		null, //[plain ? 'миллисекунда' : 'миллисекунду', 'миллисекунды', 'миллисекунд'],
 		1000,
 		[plain ? 'секунда' : 'секунду', 'секунды', 'секунд'],
 		60,
@@ -745,6 +745,14 @@ const responses = [
 		d: true,
 		p: /^ *(вон|проваливай|брысь|фу|прочь|п[оа]?ш[ёео]л|у(й|х[оа])ди|иди (вон|прочь|отсюда)|у?лет(и|ай|уч(ь|ивай)ся|ело?(с[ья]?)?)|катись колбаской|ползи)([^а-яё]|$)/i,
 		r: 'нет, не уйду, я наивный.',
+		n: true,
+	},
+	
+	// не пиши мне
+	{
+		d: true,
+		p: /^ *не (пиши мне|приставай ко мне|доставай меня)([^а-яё]|$)/i,
+		r: 'отдохни от интернета, это тебе поможет.',
 		n: true,
 	},
 	
@@ -1614,6 +1622,13 @@ const responses = [
 		d: true,
 		p: /(^|[^а-яё])(в чём|како[вй]|есть( ли)?) смысл( у)? (наше(й|го) )?(ж[иы]зни|существования)[!?., ]*$/i,
 		r: '¯\\\_(ツ)\_/¯',
+	},
+	
+	// что думаешь
+	{
+		d: true,
+		p: /(^|[^а-яё])что (ты )?(на это(т счёт)? )?думаешь( на это(т счёт)?)?[!?., ]*$/i,
+		r: 'я думаю о том, что такие вопросы нет смысла задавать.',
 	},
 	
 	// взорвись
@@ -2547,6 +2562,7 @@ client.on('ready', () => {
 	
 	if (!that.alreadyLaunched) {
 		that.alreadyLaunched = true;
+		
 		// при сообщениях
 		client.on('message', message => {
 			if (message.system || message.author.bot || message.author.id == myID) {
@@ -2556,6 +2572,25 @@ client.on('ready', () => {
 			// delay is necessary for correct message ordering
 			// because sometimes bot is too fast
 			setTimeout(processMessage, 100, message);
+		});
+		
+		// при удализме
+		client.on('messageDelete', message => {
+			if (message.system || !message.guild) {
+				return;
+			}
+			
+			let msgDate = message.createdAt;
+			let nowDate = new Date();
+			
+			let delText = [
+				'Здесь покоится сообщение, отправленное пользователем <@' + message.author.id + '>',
+				'R.I.P. `' + dateStr(msgDate) + '` — `' + dateStr(nowDate) + '`',
+			].join('\n');
+			
+			console.log(delText);
+			
+			message.channel.send(delText);
 		});
 	}
 });
