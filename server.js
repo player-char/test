@@ -2590,7 +2590,7 @@ client.on('ready', () => {
 			
 			// пишем в лог, может внезапно понадобиться при катастрофах
 			console.log(delText);
-			console.log(message.guild.name, '|', message.author.name, '|', message.content);
+			console.log(message.guild.name, '|', message.author.username, '|', message.content);
 			
 			if (['125781936704322802', '329993672745624426'].indexOf(junkize(message.channel.id)) != -1) {
 				message.channel.send(delText);
