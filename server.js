@@ -2364,12 +2364,12 @@ function sudo(input) {
 	
 	if (tryCut('guildump')) {
 		client.guilds.forEach((t) => {
-			console.log('G', t.id, t.name, t.iconUrl, t.owner.name, t.createdAt, t.joinedAt);
+			console.log('G', t.id, t.name, t.iconURL, t.owner.username, t.createdAt, t.joinedAt, t.memberCount);
 			t.channels.forEach((t) => {
-				console.log('C', t.id, t.type, t.name);
+				console.log('C', t.id, t.type, t.name, t.topic, t.members.size);
 			});
 			t.roles.forEach((t) => {
-				console.log('R', t.hexColor, t.name, t.permissions);
+				console.log('R', t.hexColor, t.name, t.permissions, t.members.size);
 			});
 		});
 		return 'done.';
