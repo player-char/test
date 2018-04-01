@@ -2336,7 +2336,7 @@ function sudo(input) {
 	
 	if (tryCut('eval')) {
 		try {
-			return eval(input); // eval = evil
+			return String(eval(input)); // eval = evil
 		} catch (e) {
 			return 'Error: ' + e;
 		}
@@ -2359,17 +2359,17 @@ function sudo(input) {
 	}
 	
 	if (tryCut('get')) {
-		return globalDB[input];
+		return String(globalDB[input]);
 	}
 	
 	if (tryCut('guildump')) {
 		client.guilds.forEach((t) => {
-			console.log('G', t.id, t.name, t.iconURL, t.owner.username, t.createdAt, t.joinedAt, t.memberCount);
+			console.log('G', t.id, '<' + t.name + '>', t.members.size, t.owner.user.username, t.createdAt, t.joinedAt, t.iconURL);
 			t.channels.forEach((t) => {
-				console.log('C', t.id, t.type, t.name, t.topic, t.members.size);
+				console.log('C', t.id, t.type, t.members.size, t.name, t.topic);
 			});
 			t.roles.forEach((t) => {
-				console.log('R', t.hexColor, t.name, t.permissions, t.members.size);
+				console.log('R', t.hexColor, t.name, t.members.size, t.permissions);
 			});
 		});
 		return 'done.';
