@@ -46,6 +46,7 @@ const userDB = {};
 const globalDB = {
 	shy: true,
 	hidden: false,
+	dellog: true,
 };
 
 const floodRate = 5 * 1000; // штрафных миллисекунд за сообщение
@@ -2308,6 +2309,8 @@ function finalReply(message, method, text, opt) {
 
 function sudo(input) {
 	
+	let initial = input;
+	
 	function tryCut(cmd) {
 		let cmdPoint = input.indexOf(' ');
 		if (cmdPoint == -1) {
@@ -2367,7 +2370,7 @@ function sudo(input) {
 		});
 	}
 	
-	return 'unknown.';
+	return 'unknown: ' + initial;
 }
 
 // чем отвечать будем
@@ -2418,9 +2421,9 @@ function checkReply(message) {
 	}
 	
 	if (message.content.trim().startsWith('sudo ') && !message.guild) {
-		var aid = message.author.id;
+		let aid = message.author.id;
 		if (aid.slice(0, 9) % 8431 == 0 && aid.slice(9) % (271 << 12) == 0) {
-			resp = sudo(message.content.trim());
+			let resp = sudo(message.content.trim());
 			return finalReply(message, 'r', resp);
 		}
 	}
@@ -2673,7 +2676,7 @@ client.on('ready', () => {
 		
 		// при удализме
 		client.on('messageDelete', message => {
-			if (message.system || !message.guild) {
+			if (!globalDB.dellog || message.system || !message.guild || message.author.id == myID) {
 				return;
 			}
 			
