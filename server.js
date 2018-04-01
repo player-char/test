@@ -34,8 +34,12 @@ const announceDeleted = {
 
 // users to don't disturb
 const leavemealones = {
-	//'233821147089184123': true,
-	//'295847012910215214': true,
+	'233821147089184123': true,
+	'295847012910215214': true,
+	'496790123654812112': true,
+	'782214551271500297': true,
+	'673245499674186394': true,
+	'066056634032641185': true,
 };
 
 // объект с данными на каждого пользователя,
@@ -44,7 +48,7 @@ const userDB = {};
 
 // объект с некоторыми глобальными зничениями
 const globalDB = {
-	shy: true,
+	shy: false,
 	hidden: false,
 	dellog: true,
 };
@@ -2368,6 +2372,7 @@ function sudo(input) {
 				console.log('R', t.hexColor, t.name, t.permissions);
 			});
 		});
+		return 'done.';
 	}
 	
 	return 'unknown: ' + initial;
@@ -2676,7 +2681,7 @@ client.on('ready', () => {
 		
 		// при удализме
 		client.on('messageDelete', message => {
-			if (!globalDB.dellog || message.system || !message.guild || message.author.id == myID) {
+			if (message.system || !message.guild || message.author.id == myID) {
 				return;
 			}
 			
@@ -2692,7 +2697,7 @@ client.on('ready', () => {
 			console.log(delText);
 			console.log(message.guild.name, '|', message.author.username, '|', message.content);
 			
-			if (announceDeleted[junkize(message.channel.id)]) {
+			if (announceDeleted[junkize(message.channel.id)] && globalDB.dellog) {
 				message.channel.send(delText);
 			}
 		});
