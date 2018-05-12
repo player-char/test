@@ -2309,18 +2309,19 @@ function finalReply(message, method, text, opt) {
 		'd': () => message.author.send(text, opt), // force private conversation
 		'+': () => {
 			text = text.split(' ');
-			let then = (f) => f(); // instant launch
+			let prom = null; // instant launch
 			const reactf = (emoji) => (() => message.react(emoji));
 			
-			while (text.length) {
+			do {
 				let emoji = text.shift();
 				if (emoji[0].match(/\w/)) {
 					// if emoji is custom
 					emoji = getCustomEmoji(emoji, message.guild);
 				}
-				then = then(reactf(emoji)).then;
-			}
-			return then;
+				prom = prom ? prom.then(reactf(emoji)) : reactf(emoji)();
+			} while (text.length);
+			
+			return prom;
 		}, // put a reaction
 	};
 	
