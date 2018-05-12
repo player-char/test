@@ -2328,7 +2328,7 @@ function finalReply(message, method, text, opt) {
 		throw 'Unknown reply type:' + method;
 	}
 	
-	return f[method]();
+	return methods[method]();
 }
 
 // debug & manage commands
