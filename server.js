@@ -1,18 +1,10 @@
 // Дискорд-бот "Крипушка"
 
-var that = that || {}
-
-(function(that) {
-that.statLaunches = +!!that.statLaunches + 1
-
 const Discord = require('discord.js')
 const client = new Discord.Client()
 
 const https = require('https')
 const http = require('http')
-
-//let that = this
-//console.log(that)
 
 const myToken = process.env.BOT_TOKEN
 
@@ -2240,7 +2232,7 @@ const responses = [
 				'Наибольшее время простоя:\n**`' + dateDiff(stat.waitMax, true) + '`**.',
 				'',
 				'Шишек набито при запросе: **`' + stat.errorCount + '`**.',
-				'Запусков в этой сессии: **`' + that.statLaunches + '`**.',
+				//'Запусков в этой сессии: **`' + that.statLaunches + '`**.',
 			].join('\n')]
 		},
 	},
@@ -2677,9 +2669,6 @@ function processMessage(message) {
 	}
 }
 
-
-
-that.alreadyLaunched = !!that.alreadyLaunched
 // сразу, как зайдёт
 client.on('ready', () => {
 	console.log('I am ready!')
@@ -2687,8 +2676,9 @@ client.on('ready', () => {
 	myID = client.user.id
 	setStatus()
 	
-	if (!that.alreadyLaunched) {
-		that.alreadyLaunched = true
+	//if (!that.alreadyLaunched) {
+	//	that.alreadyLaunched = true
+	if (true) {
 		
 		// при сообщениях
 		client.on('message', message => {
@@ -2902,5 +2892,3 @@ function plainText(o, ignored) {
 	}
 	return s
 }
-
-})(that)
