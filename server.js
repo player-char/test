@@ -1,20 +1,20 @@
 // Дискорд-бот "Крипушка"
 
-var that = that || {};
+var that = that || {}
 
 (function(that) {
-that.statLaunches = +!!that.statLaunches + 1;
+that.statLaunches = +!!that.statLaunches + 1
 
-const Discord = require('discord.js');
-const client = new Discord.Client();
+const Discord = require('discord.js')
+const client = new Discord.Client()
 
-const https = require('https');
-const http = require('http');
+const https = require('https')
+const http = require('http')
 
-//let that = this;
-//console.log(that);
+//let that = this
+//console.log(that)
 
-const myToken = process.env.BOT_TOKEN;
+const myToken = process.env.BOT_TOKEN
 
 // init
 
@@ -23,14 +23,14 @@ let myID = null; // who ever cares?
 // floodless channels
 const floodless = {
 	'125781936704322802': true,
-};
+}
 
 // channels show deleted message graves in
 const announceDeleted = {
 	'125781936704322802': true,
 	'329993672745624426': true,
 	'034830190066969889': true,
-};
+}
 
 // users to don't disturb
 const leavemealones = {/*
@@ -40,18 +40,18 @@ const leavemealones = {/*
 	'782214551271500297': true,
 	'673245499674186394': true,
 	'066056634032641185': true,
-*/};
+*/}
 
 // объект с данными на каждого пользователя,
 // который что-либо писал в этой сессии.
-const userDB = {};
+const userDB = {}
 
 // объект с некоторыми глобальными зничениями
 const globalDB = {
 	shy: true,
 	hidden: false,
 	dellog: false,
-};
+}
 
 const floodRate = 5 * 1000; // штрафных миллисекунд за сообщение
 const floodMax = 20 * 1000; // штрафных миллисекунд для получения игнора
@@ -59,7 +59,7 @@ const floodChillsMax = 2; // сколько чиллаутов писать пе
 
 const attDelay = 110 * 1000; // миллисекунд для реагирования без призывания
 
-const since = Date.now();
+const since = Date.now()
 const stat = {
 	readCount: 0,
 	replyCount: 0,
@@ -84,91 +84,91 @@ const stat = {
 	
 	waitMax: 0,
 	waitLast: since,
-};
+}
 
 // выдаёт true с указанным шансом
 function chance(a) {
-	return Math.random() < a;
+	return Math.random() < a
 }
 
 // вытаскивание элемента из массива
 Object.defineProperty(Array.prototype, 'pick', {value: function(rand) {
 	if (typeof rand == 'undefined') {
 		// тупо рандомно
-		return this[Math.floor(this.length * Math.random())];
+		return this[Math.floor(this.length * Math.random())]
 	} else {
 		// по остатку
-		return this[rand % this.length];
+		return this[rand % this.length]
 	}
-}});
+}})
 // разбивание строки по пробелам и вытаскивание
 Object.defineProperty(String.prototype, 'spick', {value: function(rand) {
-	return this.split(' ').pick(rand);
-}});
+	return this.split(' ').pick(rand)
+}})
 
-const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря']
 
 // приблизительное время создания снежинки
 function sfTime(s) {
-    return new Date(1420070400000 + s / 4194304);
+    return new Date(1420070400000 + s / 4194304)
 }
 
 // снежинка по дате
 function sfGet(n) {
-	return String((n - 1420070400000) * 4194304);
+	return String((n - 1420070400000) * 4194304)
 }
 
-const timezoneOffset = 3;
-const timezoneSuffix = ' МСК';
+const timezoneOffset = 3
+const timezoneSuffix = ' МСК'
 
 // читабельное числовое время в текущей таймзоне
 function dateStr(d) {
 	if (!d.toJSON) {
-		d = new Date(d);
+		d = new Date(d)
 	}
-	d.setHours(d.getHours() + timezoneOffset);
-	return d.toJSON().split(".")[0].replace(/T/, ' ') + timezoneSuffix;
+	d.setHours(d.getHours() + timezoneOffset)
+	return d.toJSON().split(".")[0].replace(/T/, ' ') + timezoneSuffix
 }
 
 // словесное описание дня
 function dateDay(d) {
-	return d.getDate() + '-го ' + months[d.getMonth()] + ' ' + d.getFullYear() + ' года';
+	return d.getDate() + '-го ' + months[d.getMonth()] + ' ' + d.getFullYear() + ' года'
 }
 
 // формы множественного числа
 function pluralize(n, arr) {
-	const k = n % 10;
-	return arr[(n - k) / 10 % 10 != 1 ? (k != 1 ? ([2, 3, 4].includes(k) ? 1 : 2) : 0) : 2];
+	const k = n % 10
+	return arr[(n - k) / 10 % 10 != 1 ? (k != 1 ? ([2, 3, 4].includes(k) ? 1 : 2) : 0) : 2]
 }
 
 // словесное форматирование интервалов
 function formatIntervals(warr, diff, limit) {
-	const tarr = [];
+	const tarr = []
 	// нарезаем всю разность на интервалы
 	for (let i = 1; i < warr.length; i += 2) {
-		const x = warr[i];
-		const d = diff % x;
-		tarr.push(d);
-		diff = (diff - d) / x;
+		const x = warr[i]
+		const d = diff % x
+		tarr.push(d)
+		diff = (diff - d) / x
 	}
 	// кладём остаток в конец
-	tarr.push(diff);
+	tarr.push(diff)
 	
-	const sarr = [];
-	let count = 0;
-	let lvl = -1;
+	const sarr = []
+	let count = 0
+	let lvl = -1
 	// пишем то, что непусто
 	for (let i = tarr.length; i >= 0; i--) {
-		let words = warr[i << 1];
+		let words = warr[i << 1]
 		if (!tarr[i] || !words) {
-			continue;
+			continue
 		}
-		sarr.push(tarr[i] + ' ' + pluralize(tarr[i], words));
+		sarr.push(tarr[i] + ' ' + pluralize(tarr[i], words))
 		if (!count) {
-			lvl = i;
+			lvl = i
 		}
 		if (++count >= limit) {
-			break;
+			break
 		}
 	}
 	
@@ -190,7 +190,7 @@ function dateDiff(diff, plain) {
 		['сутки', 'суток', 'суток'],
 		7,
 		[plain ? 'неделя' : 'неделю', 'недели', 'недель'],
-	], diff, 3);
+	], diff, 3)
 	
 	// неточный промежуток, зато величины более ёмкие
 	const years = formatIntervals([
@@ -203,9 +203,9 @@ function dateDiff(diff, plain) {
 		['век', 'века', 'веков'],
 		10,
 		['тысячелетие', 'тысячелетия', 'тысячелетий'],
-	], diff, 3);
+	], diff, 3)
 	
-	return years ? (diff > 75000000000 ? years : years + ' (' + weeks + ')') : weeks;
+	return years ? (diff > 75000000000 ? years : years + ' (' + weeks + ')') : weeks
 }
 
 // потому что на старой ноде не работает.
@@ -214,93 +214,93 @@ function replacePow(s) {
 	
 	function operand(pos, d) {
 		let o = 0; // offset
-		let lvl = 0;
-		let c;
+		let lvl = 0
+		let c
 		
 		while (c = s[pos + o + d]) {
 			// parentheses
-			let op = c == '(';
-			let cl = c == ')';
+			let op = c == '('
+			let cl = c == ')'
 			if (op || cl) {
-				lvl += op * d - cl * d;
+				lvl += op * d - cl * d
 				if (lvl < 0) {
-					lvl = 0;
-					break;
+					lvl = 0
+					break
 				}
 			}
 			
 			// stopping chars
 			if (!lvl && ',/%*+-'.indexOf(c) != -1) {
-				break;
+				break
 			}
 			
-			o += d;
+			o += d
 		}
-		return !lvl * o;
+		return !lvl * o
 	}
 	
 	while (true) {
-		let pos = s.lastIndexOf('**');
+		let pos = s.lastIndexOf('**')
 		if (pos == -1) {
-			return s;
+			return s
 		}
-		let a = operand(pos, -1);
-		let b = operand(pos + 1, 1);
+		let a = operand(pos, -1)
+		let b = operand(pos + 1, 1)
 		if (!(a * b)) {
 			// operands are wrecked
-			return false;
+			return false
 		}
-		let outa = s.slice(0, pos + a);
-		let sa = s.slice(pos + a, pos);
-		let sb = s.slice(pos + 2, pos + 2 + b);
-		let outb = s.slice(pos + 2 + b);
+		let outa = s.slice(0, pos + a)
+		let sa = s.slice(pos + a, pos)
+		let sb = s.slice(pos + 2, pos + 2 + b)
+		let outb = s.slice(pos + 2 + b)
 		
-		s = outa + '(Math.pow((' + sa + '),(' + sb + ')))' + outb;
+		s = outa + '(Math.pow((' + sa + '),(' + sb + ')))' + outb
 	}
 }
 
 // trashes number-like string to junk
 function junkize(s) {
-	var z = '';
-	var g = 41;
+	var z = ''
+	var g = 41
 	for (var i = 0; i < s.length; i++) {
-		var c = s[i];
-		g ^= (i + 11 + s[i]);
+		var c = s[i]
+		g ^= (i + 11 + s[i])
 		for (var j = 0; j < s.length; j++) {
-			var v = s[j];
-			g += c * (v + 13) + (c ^ (v + ((i * 3) >> 1) + 1)) * 17 + (((v * 7) >> 1) | c) * 19;
+			var v = s[j]
+			g += c * (v + 13) + (c ^ (v + ((i * 3) >> 1) + 1)) * 17 + (((v * 7) >> 1) | c) * 19
 		}
-		z += String((g + g >> 2) % 10);
+		z += String((g + g >> 2) % 10)
 	}
-	return z;
+	return z
 }
 
 // не совсем хеш от букв строки.
 // чем длиннее строка, тем примерно больше число.
 function hashie(str) {
 	if (typeof str != 'string') {
-		return 0;
+		return 0
 	}
-	let sum = 0;
-	let pos = 0;
+	let sum = 0
+	let pos = 0
 	for (let i = 0; i < str.length; i++) {
 		if (str[i].match(/[0-9a-zа-яё]/)) {
-			let n = str.charCodeAt(i);
+			let n = str.charCodeAt(i)
 			// hashing machine
-			sum += 13 + (((n % 29) ^ (n % 31) ^ (n % 43) ^ (pos++ % 7)) % 17);
+			sum += 13 + (((n % 29) ^ (n % 31) ^ (n % 43) ^ (pos++ % 7)) % 17)
 		}
 	}
-	return sum;
+	return sum
 }
 
 function setStatus() {
-	console.log(Date() + '| Hidden:', globalDB.hidden);
+	console.log(Date() + '| Hidden:', globalDB.hidden)
 	if (globalDB.hidden) {
-		client.user.setStatus('invisible');
+		client.user.setStatus('invisible')
 	} else {
-		client.user.setStatus('online');
-		//client.user.setGame('Discord');
-		client.user.setPresence({game: {name: 'Discord', type: 0}});
+		client.user.setStatus('online')
+		//client.user.setGame('Discord')
+		client.user.setPresence({game: {name: 'Discord', type: 0}})
 	}
 }
 
@@ -308,25 +308,25 @@ function setStatus() {
 function getCustomEmoji(name, guild) {
 	if (guild && guild.emojis) {
 		// ищем в текущем месте
-		const map = guild.emojis;
+		const map = guild.emojis
 		for (let i of map) {
 			if (i[1].name == name) {
-				return i[1];
+				return i[1]
 			}
 		}
 	}
 	
 	// потом ищем повсюду
-	const all = client.emojis;
+	const all = client.emojis
 	for (let i of all) {
 		if (i[1].name == name) {
-			return i[1];
+			return i[1]
 		}
 	}
 	
 	// 404
-	console.log('Emoji "' + name + '" was not found.');
-	return '😜';
+	console.log('Emoji "' + name + '" was not found.')
+	return '😜'
 }
 
 // база знаний
@@ -336,12 +336,12 @@ const known = {
 	'камк|kamka': 'Камка — это та, которая любит, когда что-то горит.',
 	'олен|deer': () => {
 		if (chance(0.3)) {
-			return ['+', '🦌'];
+			return ['+', '🦌']
 		}
 		return 'олень ' + [
 			'был завезён человеком в Австралию и Новую Зеландию.',
 			'олицетворяет благородство, величие, красоту, грацию, быстроту.',
-		].pick();
+		].pick()
 	},
 	'банан|banana': ['+', '🍌'],
 	'google[ -]?crasher|гуго?л[ео -]?кр[ау]с?ш(ер|а)?|гхугл': 'GoogleCrasher — модератор, всеми силами пытающийся ~~вытянуть РнКр из канавы~~ загнать его туда.',
@@ -450,14 +450,14 @@ const known = {
 	'флуд|flood': 'флуд — наводнение информационных и не только информационных каналов.',
 	'спам|spam': (m) => {
 		// ну сами напросились
-		const spam = m[1].toLowerCase();
-		const slam = spam[0].toUpperCase() + spam.slice(1);
+		const spam = m[1].toLowerCase()
+		const slam = spam[0].toUpperCase() + spam.slice(1)
 		
-		let mail = spam + ' — ' + spam;
+		let mail = spam + ' — ' + spam
 		while (mail.length < 950) {
-			mail += chance(0.8) ? (chance(0.8) ? ' ' : ['-', ', '].pick()) + spam : '. ? !'.spick() + (chance(0.2) ? '\n\n \n'.spick() : ' ') + slam;
+			mail += chance(0.8) ? (chance(0.8) ? ' ' : ['-', ', '].pick()) + spam : '. ? !'.spick() + (chance(0.2) ? '\n\n \n'.spick() : ' ') + slam
 		}
-		return ['d', mail + '!'];
+		return ['d', mail + '!']
 	},
 	'фич|feature': 'фича — функция или особенность программы.',
 	'баг|bug': 'баг — ошибка в коде программы, допущенная программистом.',
@@ -488,7 +488,7 @@ const known = {
 	'чар|char': 'char — то, из чего состоят текстовые строки в программировании.',
 	'себя|крипушк': 'откуда мне знать, кто я такой?',
 	'я|меня': 'посмотри на себя в зеркало и увидишь.',
-};
+}
 
 // массив с базой данных того, на что бот реагирует
 const responses = [
@@ -611,10 +611,10 @@ const responses = [
 		r: (m) => {
 			for (let i = 0; i < m.length; i++) {
 				if (!m[i].match(/^(Железн(ая|ую) Дверь|Железной Двер(и|ью))$/)) {
-					return 'pray to the Iron Door.';
+					return 'pray to the Iron Door.'
 				}
 			}
-			return false;
+			return false
 		},
 	},
 	
@@ -649,10 +649,10 @@ const responses = [
 	{
 		p: /(^|[^а-яё])ч(т?[оеё]|его) ((же?|бы) )?((теперь|мне|ещё|дальше|такого) )*(с|по)?делать( (теперь|мне|ещё|дальше|такого))*(, а)?[!?., ]*$/i,
 		r: () => {
-			let now = new Date();
+			let now = new Date()
 			
 			// day cycle starts between 22:00 and 23:00.
-			let hours = (now.getHours() + chance(now.getMinutes() / 60) + 1 + timezoneOffset) % 24;
+			let hours = (now.getHours() + chance(now.getMinutes() / 60) + 1 + timezoneOffset) % 24
 			
 			if (hours < 8) {
 				// night: sleep tight
@@ -669,13 +669,13 @@ const responses = [
 					'.',
 					', поздно уже.',
 					', утро вечера мудренее.',
-				].pick();
+				].pick()
 			}
 			
 			if (hours < 13) {
 				// morning time
 				// 06:30 - 11:30
-				return 'сделай зарядку, позавтракай, распланируй дела на сегодня и приступай к их выполнению.';
+				return 'сделай зарядку, позавтракай, распланируй дела на сегодня и приступай к их выполнению.'
 			}
 			
 			// dayly activity
@@ -689,7 +689,7 @@ const responses = [
 				'расскажи нам какую-нибудь забавную историю.',
 				'позвони друзьям и спроси, что у них интересного.',
 				'отдохни от интернета, поразмышляй о чём-нибудь.',
-			].pick();
+			].pick()
 		},
 	},
 	
@@ -983,7 +983,7 @@ const responses = [
 					'ага, щас! Не так быстро!',
 					'не бросай меня одного!',
 					'эй, а как же я?',
-				].pick();
+				].pick()
 			}
 			return [
 				'пока!',
@@ -992,7 +992,7 @@ const responses = [
 				'до свидания!',
 				'до свидания.',
 				'до скорой встречи!',
-			].pick();
+			].pick()
 		},
 		t: {
 			name: 'bye',
@@ -1057,7 +1057,7 @@ const responses = [
 				'крипово',
 				'тупо',
 				'глупо',
-			];
+			]
 			let well = [
 				'прекрасно',
 				'восхитительно',
@@ -1070,10 +1070,10 @@ const responses = [
 				'здорово',
 				'неплохо',
 				'безупречно',
-			];
-			let bad = badly.includes(m[2].toLowerCase()) || badly.includes(m[3].toLowerCase());
-			let arr = bad ? badly.slice(0, 6) : well;
-			return arr.pick() + ['.', '!'].pick();
+			]
+			let bad = badly.includes(m[2].toLowerCase()) || badly.includes(m[3].toLowerCase())
+			let arr = bad ? badly.slice(0, 6) : well
+			return arr.pick() + ['.', '!'].pick()
 		},
 	},
 	
@@ -1128,31 +1128,31 @@ const responses = [
 	{
 		p: /(?:^|\s|[`"'])(^|(?:реши(?: выражение| пример)|сколько(?: будет)?|(?:вы|[пс]о)считай|вычисли)\s+`{0,3})?([ ()0-9.*\/^%+-]*[0-9][ ()0-9.*\/^%+-]*[*\/^%+-][ ()0-9.*\/^%+-]*[0-9][()0-9.*\/^%+-]*)(?:[`"'!?.,]|\s|$)/i,
 		r: (m) => {
-			let expression = m[2].trim().replace(/\^/g, '**');
+			let expression = m[2].trim().replace(/\^/g, '**')
 			if (expression.match(/\/\*|\/\/|\*\//)) {
 				// ignore if there are comments
-				return false;
+				return false
 			}
 			if (m[2] != m.input && !m[1] && expression.match(/^(\. *)?[0-9]+([\/-][0-9]+)+\.?$/)) {
 				// 10-12, 24/7, 2017-08-18 без просьбы решать не надо
-				return false;
+				return false
 			}
 			// убираем пробелы
-			expression = expression.replace(/\s/g, '');
+			expression = expression.replace(/\s/g, '')
 			// заменяем ** на Math.pow, так как нода старая
-			expression = replacePow(expression);
+			expression = replacePow(expression)
 			if (!expression) {
 				// если при замене обнаружилось, что скобки сломаны
-				return false;
+				return false
 			}
 			// вычисляем
 			try {
 				let result = eval(expression); // eval = evil
 				if (typeof result === 'number') {
-					return String(parseFloat(result.toPrecision(15)));
+					return String(parseFloat(result.toPrecision(15)))
 				}
 			} catch(e) {}
-			return false;
+			return false
 		},
 		f: true,
 	},
@@ -1161,12 +1161,12 @@ const responses = [
 	{
 		p: /(?:^|[^а-яё])(?:вы)?дай(?:те)?(?: мне)? +([0-9]*)(?: штук[иу]? )? *([0-9а-яёa-z '"&-]*)/i,
 		r: (m, floodey, message) => {
-			let count = m[1] ? +m[1] : 64;
-			let item = m[2].trim().toUpperCase();
+			let count = m[1] ? +m[1] : 64
+			let item = m[2].trim().toUpperCase()
 			if (item.length > 32 || item.length < 2) {
-				return false;
+				return false
 			}
-			return ['s', '*Выдано **' + count + '** штук **' + item + '** игроку **<@' + message.author.id + '>**.*'];
+			return ['s', '*Выдано **' + count + '** штук **' + item + '** игроку **<@' + message.author.id + '>**.*']
 		},
 	},
 	
@@ -1299,9 +1299,9 @@ const responses = [
 		p: /^ *ты ([а-яё]+)/i,
 		r: (m) => {
 			if (m[1].match(/([ыои]й|[ая]я|[ое][её])$/i)) {
-				return (m[1] == 'наивный' ? 'да' : 'нет') + ', я наивный.';
+				return (m[1] == 'наивный' ? 'да' : 'нет') + ', я наивный.'
 			}
-			return false;
+			return false
 		},
 	},
 	
@@ -1351,15 +1351,15 @@ const responses = [
 		d: true,
 		p: /drop\s+(database|table)/i,
 		r: (m) => {
-			//let obj = (m[1] == 'table' ? '┳━┳' : '[DATABASE]');
-			let jbo = (m[1] == 'table' ? '┻━┻' : '[ꓱꓢꓯꓭꓯꓕꓯꓷ]');
+			//let obj = (m[1] == 'table' ? '┳━┳' : '[DATABASE]')
+			let jbo = (m[1] == 'table' ? '┻━┻' : '[ꓱꓢꓯꓭꓯꓕꓯꓷ]')
 			return ['s', [
 				//obj + ' ノ(˚-˚ノ)\n\n(╯°д°）╯︵ ' + jbo,
 				//'(㇏˚-˚)㇏ ' + obj + '\n\n' + jbo + '︵ ╰(°д°╰)',
 				'(╯°д°）╯︵ ' + jbo,
 				jbo + '︵ ╰(°д°╰)',
 				//jbo + 'ミ㇏(ಠ益ಠ)ノ彡' + jbo,
-			].pick()];
+			].pick()]
 		},
 	},
 	
@@ -1492,15 +1492,15 @@ const responses = [
 		d: true,
 		p: /(^|[^а-яё])(когда|какого числа) (был[ао]? |ты )?((зарег(истриров)?|созд|сдел)а(н[ао]?|л(и|ся|[аои]сь)))( (пользователь|юзер|канал|снежинка|id))?\s+(\\?<?\\?(@[!&]?|#|:[^:]+:)?(\d{1,20})>?)?[!?., ]*$/i,
 		r: (m) => {
-			let id = m[13];
+			let id = m[13]
 			if (!id || id == myID) {
-				return 'когда мне в майн играть надоело.';
+				return 'когда мне в майн играть надоело.'
 			}
-			let t = sfTime(id);
+			let t = sfTime(id)
 			if (!(t.getHours() >= 0)) {
-				return 'упс, что-то цифры обкурились немножко.';
+				return 'упс, что-то цифры обкурились немножко.'
 			}
-			return '**`' + dateStr(t) + '`**';
+			return '**`' + dateStr(t) + '`**'
 		},
 	},
 	
@@ -1754,17 +1754,17 @@ const responses = [
 		d: true,
 		p: /(^|[^а-яё])ч(то|[оеё]) (ты )?(мелешь|с?молол|несёшь|сказал|говори(шь|л))[!?., ]*$/i,
 		r: (m) => {
-			let verb = m[4].toLowerCase();
+			let verb = m[4].toLowerCase()
 			if (verb.match(/м[ео]л/i)) {
-				return 'если бы я был мельницей, я бы определённо молол зерно.';
+				return 'если бы я был мельницей, я бы определённо молол зерно.'
 			}
 			if (verb == 'несёшь') {
 				return [
 					'двойку в портфеле я несу.',
 					'службу я несу.',
-				].pick();
+				].pick()
 			}
-			return 'ничего (:';
+			return 'ничего (:'
 		},
 	},
 	
@@ -1773,10 +1773,10 @@ const responses = [
 		d: true,
 		p: /(^|[^а-яё])((как д(авн|олг)о|сколько( времени)?)( уже)? (ты( уже)? )?(онлайн|работаешь|запущен)( уже)?|(скажи (свой )?|како[йв] (у тебя |твой )?)?аптайм)[!?., ]*$/i,
 		r: () => {
-			let now = new Date();
-			return 'я онлайн уже ' + dateDiff(+now - since) + '.';
+			let now = new Date()
+			return 'я онлайн уже ' + dateDiff(+now - since) + '.'
 			//+ 'Время на моих часах при запуске:\n`' + dateStr(since) + '`.\n'
-			//+ 'Время на моих часах сейчас:\n`' + dateStr(now) + '`.';
+			//+ 'Время на моих часах сейчас:\n`' + dateStr(now) + '`.'
 		},
 	},
 	
@@ -1799,9 +1799,9 @@ const responses = [
 		d: true,
 		p: /^ *(?:(?:не )?знаешь, )?почему ?([0-9а-яёa-z '",~:%<>*&#=+-]*)/i,
 		r: (m) => {
-			let h = hashie(m[1].toLowerCase());
+			let h = hashie(m[1].toLowerCase())
 			if (h < 100) {
-				return 'потому что!';
+				return 'потому что!'
 			}
 			return 'потому что ' + [
 				'все так думают.',
@@ -1815,7 +1815,7 @@ const responses = [
 				'тебе так кажется.',
 				'мир несовершенен.',
 				'рандом нерандомен.',
-			].pick(h);
+			].pick(h)
 		},
 	},
 	
@@ -1832,18 +1832,18 @@ const responses = [
 		p: /(^|[^а-яёa-z])(((скажи|(ты )?знаешь( ли ты)?),? )*(знаешь?|[чк]то (значит|за|так(ой|ая|ое)|есть)|wh(o|at) is))/i,
 		r: (m, floodey, message) => {
 			
-			let lc = m.input.toLowerCase();
-			lc = lc.slice(0, m.index) + lc.slice(m.index + m[2].length + 1);
+			let lc = m.input.toLowerCase()
+			lc = lc.slice(0, m.index) + lc.slice(m.index + m[2].length + 1)
 			
 			for (let p in known) {
-				var mm = lc.match('(?:^|[^а-яё])(' + p + ')');
+				var mm = lc.match('(?:^|[^а-яё])(' + p + ')')
 				if (mm) {
-					let result = known[p];
+					let result = known[p]
 					if (typeof result == 'function') {
-						result = result(mm);
+						result = result(mm)
 					}
 					if (result) {
-						return result;
+						return result
 					}
 				}
 			}
@@ -1856,7 +1856,7 @@ const responses = [
 				'неа, не знаю такого.',
 				'что-то не припомню такого.',
 				'хмм, не, не слышал.',
-			].pick();
+			].pick()
 		},
 	},
 	
@@ -1915,7 +1915,7 @@ const responses = [
 		d: true,
 		p: /^ *((а )?ну(-ка)? )?скажи ([а-яёa-z0-9'"`*\/ -]+)/i,
 		r: (m) => {
-			const phrase = m[1].toLowerCase();
+			const phrase = m[1].toLowerCase()
 			const ways = [
 				'не хочу',
 				'не буду',
@@ -1923,15 +1923,15 @@ const responses = [
 				'не намереваюсь',
 				'не скажу',
 				'не стану',
-			];
+			]
 			
-			let i = 0;
+			let i = 0
 			while (phrase.match(ways[i])) {
 				if (!ways[++i]) {
-					return ['+', '😝 🤐'.spick()];
+					return ['+', '😝 🤐'.spick()]
 				}
 			}
-			return ways[i] + '.';
+			return ways[i] + '.'
 		},
 	},
 	
@@ -2201,9 +2201,9 @@ const responses = [
 		d: true,
 		p: /^ *(((ворот|верн|по(каж|яв))ись)|с(((кро|мо|ле)й|прячь)ся|гинь))[!?., ]*$/i,
 		r: (m) => {
-			globalDB.hidden = !m[2];
-			setStatus();
-			return true;
+			globalDB.hidden = !m[2]
+			setStatus()
+			return true
 		},
 	},
 	
@@ -2212,7 +2212,7 @@ const responses = [
 		d: true,
 		p: /^ *((слей|с?кинь|покажи) (инфу|показатели|метрики|данные)|дебаг|debug)( в лс)?[!. ]*$/i,
 		r: (m) => {
-			const nowDate = new Date();
+			const nowDate = new Date()
 			return ['d', [
 				'слив инфы о работе (за данный сеанс):',
 				'',
@@ -2241,7 +2241,7 @@ const responses = [
 				'',
 				'Шишек набито при запросе: **`' + stat.errorCount + '`**.',
 				'Запусков в этой сессии: **`' + that.statLaunches + '`**.',
-			].join('\n')];
+			].join('\n')]
 		},
 	},
 	
@@ -2275,7 +2275,7 @@ const responses = [
 			if (chance(0.4) && (!message.guild || !floodey)) {
 				if (mentioned !== true) {
 					// если не призывали, а написали в лс
-					return false;
+					return false
 				}
 				return [
 					'а?',
@@ -2286,21 +2286,21 @@ const responses = [
 					'мм?',
 					'ку-ку.',
 					'да ладно, можешь не призывать. Всё равно я ещё мало чего умею.',
-				].pick();
+				].pick()
 			}
 			if (chance(0.1)) {
-				return ['+', '🤔'];
+				return ['+', '🤔']
 			}
-			return ['+', '👋 🖐 😑 😐 😁 🙃 🙄 😓 😪 😷 😶 🍌 📯 🎺 🏸'.spick()];
+			return ['+', '👋 🖐 😑 😐 😁 🙃 🙄 😓 😪 😷 😶 🍌 📯 🎺 🏸'.spick()]
 		},
 	},
-];
+]
 
 // крипушки ответ на сообщение
 function finalReply(message, method, text, opt) {
 	if (method != '+' && (method != 'r' || !message.guild)) {
 		// Capitalizing
-		text = text.slice(0, 1).toUpperCase() + text.slice(1);
+		text = text.slice(0, 1).toUpperCase() + text.slice(1)
 	}
 	
 	const methods = {
@@ -2308,101 +2308,101 @@ function finalReply(message, method, text, opt) {
 		's': () => message.channel.send(text, opt), // just say
 		'd': () => message.author.send(text, opt), // force private conversation
 		'+': () => {
-			text = text.split(' ');
+			text = text.split(' ')
 			let prom = null; // instant launch
-			const reactf = (emoji) => (() => message.react(emoji));
+			const reactf = (emoji) => (() => message.react(emoji))
 			
 			do {
-				let emoji = text.shift();
+				let emoji = text.shift()
 				if (emoji[0].match(/\w/)) {
 					// if emoji is custom
-					emoji = getCustomEmoji(emoji, message.guild);
+					emoji = getCustomEmoji(emoji, message.guild)
 				}
-				prom = prom ? prom.then(reactf(emoji)) : reactf(emoji)();
-			} while (text.length);
+				prom = prom ? prom.then(reactf(emoji)) : reactf(emoji)()
+			} while (text.length)
 			
-			return prom;
+			return prom
 		}, // put a reaction
-	};
-	
-	if (!methods[method]) {
-		throw 'Unknown reply type:' + method;
 	}
 	
-	return methods[method]();
+	if (!methods[method]) {
+		throw 'Unknown reply type:' + method
+	}
+	
+	return methods[method]()
 }
 
 // debug & manage commands
 function sudo(input) {
-	let initial = input;
+	let initial = input
 	
 	function tryCut(cmd) {
-		let cmdPoint = input.indexOf(' ');
+		let cmdPoint = input.indexOf(' ')
 		if (cmdPoint == -1) {
-			cmdPoint = Infinity;
+			cmdPoint = Infinity
 		}
-		let got = input.slice(0, cmdPoint);
-		let arg = input.slice(cmdPoint + 1).trim();
+		let got = input.slice(0, cmdPoint)
+		let arg = input.slice(cmdPoint + 1).trim()
 		
 		if (!cmd || got == cmd) {
 			// then cut
-			input = arg;
-			return got;
+			input = arg
+			return got
 		}
 		// else don't
-		return false;
+		return false
 	}
 	
-	tryCut();
+	tryCut()
 	
 	if (tryCut('eval')) {
 		try {
 			return eval(input); // eval = evil
 		} catch (e) {
-			return 'Error: ' + e;
+			return 'Error: ' + e
 		}
 	}
 	
 	if (tryCut('dump')) {
-		console.log('globalDB', globalDB);
-		console.log('userDB', userDB);
-		console.log('stat', stat);
-		return;
+		console.log('globalDB', globalDB)
+		console.log('userDB', userDB)
+		console.log('stat', stat)
+		return
 	}
 	
 	if (tryCut('set')) {
-		let prop = tryCut();
+		let prop = tryCut()
 		try {
-			return globalDB[prop] = JSON.parse(input);
+			return globalDB[prop] = JSON.parse(input)
 		} catch (e) {
-			return 'not a value.';
+			return 'not a value.'
 		}
 	}
 	
 	if (tryCut('get')) {
-		return globalDB[input];
+		return globalDB[input]
 	}
 	
 	if (tryCut('guildump')) {
 		client.guilds.forEach((t) => {
-			console.log('G', t.id, '<' + t.name + '>', t.members.size, t.owner.user.username, t.createdAt, t.joinedAt, t.iconURL);
+			console.log('G', t.id, '<' + t.name + '>', t.members.size, t.owner.user.username, t.createdAt, t.joinedAt, t.iconURL)
 			t.channels.forEach((t) => {
-				console.log('C', t.id, t.type, t.members.size, t.name, t.topic);
-			});
+				console.log('C', t.id, t.type, t.members.size, t.name, t.topic)
+			})
 			t.roles.forEach((t) => {
-				console.log('R', t.hexColor, t.name, t.members.size, t.permissions);
-			});
-		});
-		return;
+				console.log('R', t.hexColor, t.name, t.members.size, t.permissions)
+			})
+		})
+		return
 	}
 	
-	return 'unknown: ' + initial;
+	return 'unknown: ' + initial
 }
 
 // чем отвечать будем
 function checkReply(message) {
-	const now = Date.now();
-	const uid = message.author.id;
+	const now = Date.now()
+	const uid = message.author.id
 	
 	// заводим личное дело на пользователя, если его ещё нет
 	if (!userDB[uid]) {
@@ -2414,84 +2414,84 @@ function checkReply(message) {
 			attplace: null, // последний канал общения без обращений
 			
 			timestamps: {}, // объект с таймстемпами реакций с куллдауном
-		};
+		}
 	}
-	const udata = userDB[uid];
+	const udata = userDB[uid]
 	
 	
 	// антифлуд-система
-	let score = udata.ftime - now;
+	let score = udata.ftime - now
 	if (score < 0) {
-		udata.fchills = 0;
-		score = 0;
+		udata.fchills = 0
+		score = 0
 	}
-	score += floodRate;
-	udata.ftime = now + score;
+	score += floodRate
+	udata.ftime = now + score
 	
 	if (udata.fchills >= floodChillsMax) {
 		// игнорим месседж
-		return false;
+		return false
 	}
 	if (score > floodMax) {
 		// выдаём предупреждение
-		udata.fchills++;
+		udata.fchills++
 		let resp = [
 			'достаточно набивать сообщения!',
 			'пиши помедленнее!',
 			'время флуда окончено, давай иди отдыхай.',
 			'эй, не так быстро!',
 			'охлади отправку сообщений, она у тебя перегрелась.',
-		].pick();
-		finalReply(message, 'r', resp);
-		return 'chillout';
+		].pick()
+		finalReply(message, 'r', resp)
+		return 'chillout'
 	}
 	
 	// sudo
 	if (message.content.trim().startsWith('sudo ') && !message.guild) {
-		let aid = message.author.id;
+		let aid = message.author.id
 		if (aid.slice(0, 9) % 8431 == 0 && aid.slice(9) % (271 << 12) == 0) {
-			let resp = sudo(message.content.trim());
-			return finalReply(message, 'r', resp ? String(resp) : 'done.');
+			let resp = sudo(message.content.trim())
+			return finalReply(message, 'r', resp ? String(resp) : 'done.')
 		}
 	}
 	
 	// первичная обработка сообщения
-	const place = message.channel.id;
-	const attentive = udata.attention > now && udata.attplace == place && !message.mentions.users.size;
-	const floodey = message.guild && floodless[junkize(place)];
+	const place = message.channel.id
+	const attentive = udata.attention > now && udata.attplace == place && !message.mentions.users.size
+	const floodey = message.guild && floodless[junkize(place)]
 	
-	let mentioned = message.mentions.users.has(myID) || (!message.guild ? 'dm' : false);
-	let lc = message.content.trim().replace(/\s+/g, ' ');
+	let mentioned = message.mentions.users.has(myID) || (!message.guild ? 'dm' : false)
+	let lc = message.content.trim().replace(/\s+/g, ' ')
 	
-	let m = null;
-	const cutOff = (m, lc) => (m.index ? (lc.slice(0, m.index) + ', ') : '') + lc.slice(m.index + m[0].length);
+	let m = null
+	const cutOff = (m, lc) => (m.index ? (lc.slice(0, m.index) + ', ') : '') + lc.slice(m.index + m[0].length)
 	
 	// @mentioning
-	m = lc.match('<@' + myID + '>[!?., ]*');
+	m = lc.match('<@' + myID + '>[!?., ]*')
 	if (m) {
-		lc = cutOff(m, lc);
+		lc = cutOff(m, lc)
 	}
 	
 	// parsing & removing discord's markdown to creepers green away from here.
 	// code blocks are ignored by default
-	lc = plainText(parseMd(lc), 'c');
+	lc = plainText(parseMd(lc), 'c')
 	
 	// text name mentioning
-	m = lc.match(/([,.?!] *|^)(крип(([оау]н[ья]|ус[яь])(ка)?|а[ксн]?|у(ш(е(к|нька)|онок)?|ха)|[её]р(аст)?|ч?ик|стер|ок|уа)|creep(e[ry]|ah|ie))([,.?!] *|$)/i);
+	m = lc.match(/([,.?!] *|^)(крип(([оау]н[ья]|ус[яь])(ка)?|а[ксн]?|у(ш(е(к|нька)|онок)?|ха)|[её]р(аст)?|ч?ик|стер|ок|уа)|creep(e[ry]|ah|ie))([,.?!] *|$)/i)
 	if (m) {
-		mentioned = true;
-		lc = cutOff(m, lc);
+		mentioned = true
+		lc = cutOff(m, lc)
 	}
 	
 	// почти не трогаем пользователей,
 	// если только они намеренно не лезут
-	const shy = !mentioned && !attentive && (globalDB.shy || leavemealones[junkize(uid)]);
+	const shy = !mentioned && !attentive && ((globalDB.shy && junkize(message.guild.id) != '569318087738635025') || leavemealones[junkize(uid)])
 	
 	// just say what you want from me!
 	// cuttin' off the unnecessary intro, it doesn't affect the sentence.
-	m = lc.match(/^ *(а )?(ну(-ка)? )?скажи(те)?(-ка)?, */i);
+	m = lc.match(/^ *(а )?(ну(-ка)? )?скажи(те)?(-ка)?, */i)
 	if (m) {
-		lc = cutOff(m, lc);
+		lc = cutOff(m, lc)
 	}
 	
 	// проверка по базе
@@ -2499,259 +2499,259 @@ function checkReply(message) {
 		// direct or not?
 		if (!mentioned) {
 			if (item.d === 'required') {
-				continue;
+				continue
 			}
 			if (item.d === true && !attentive) {
-				continue;
+				continue
 			}
 			if (item.d !== 'force' && shy) {
-				continue;
+				continue
 			}
 		}
 		
 		// chance
 		if (typeof item.c === 'number' && !chance(item.c)) {
-			continue;
+			continue
 		}
 		
-		m = lc.match(item.p);
+		m = lc.match(item.p)
 		
 		if (!m) {
-			continue;
+			continue
 		}
 		
 		// indirect
 		if (item.d === 'indirect' && !mentioned && m[0].length != lc.length) {
-			continue;
+			continue
 		}
 		
 		// check cooldown m
-		let source = item;
-		let record = null;
+		let source = item
+		let record = null
 		
 		if (item.t) {
-			record = udata.timestamps;
+			record = udata.timestamps
 			
 			if (record[item.t.name] > now) {
 				// will be false if record[item.t.name] is undefined
 				// (if never asked before)
 				
 				if (!item.t.r) {
-					continue;
+					continue
 				}
-				source = item.t;
+				source = item.t
 			}
 		}
 		
-		let resp = source.r;
+		let resp = source.r
 		
 		// exec if function
 		while (typeof resp === 'function') {
-			resp = resp(m, floodey, message, mentioned);
+			resp = resp(m, floodey, message, mentioned)
 		}
 		
 		// skip if false
 		if (!resp) {
-			continue;
+			continue
 		}
 		
 		// set cooldown
 		if (record) {
-			record[item.t.name] = now + item.t.wait;
-			udata.timestamps = record;
+			record[item.t.name] = now + item.t.wait
+			udata.timestamps = record
 		}
 		
 		// выделение из ответа текста и примесей
 		function reply(message, resp) {
 			
-			let opt;
+			let opt
 			if (typeof resp === 'object' && resp.files && typeof resp.text === 'string') {
-				opt = {files: resp.files};
-				resp = resp.text;
+				opt = {files: resp.files}
+				resp = resp.text
 			}
 			
 			if (!resp || resp === true) {
-				return !!resp;
+				return !!resp
 			}
 			
 			// method, 'r' by default
-			let method = 'r';
+			let method = 'r'
 			if (Array.isArray(resp)) {
-				method = resp[0];
-				resp = resp[1];
+				method = resp[0]
+				resp = resp[1]
 			}
 			
 			if (source.f && floodey) {
-				method = 'd';
+				method = 'd'
 			}
 			
 			// продлеваем внимание, чтобы второй раз призывать не требовалось
 			if (message.guild && (mentioned || attentive)) {
-				udata.attention = now + attDelay;
-				udata.attplace = place;
+				udata.attention = now + attDelay
+				udata.attplace = place
 			}
 			
-			return finalReply(message, method, resp, opt);
+			return finalReply(message, method, resp, opt)
 		}
 		
 		if (resp && typeof resp.then === 'function') {
-			return ((msg, r) => r.then((nr) => reply(msg, nr)))(msg, r);
+			return ((msg, r) => r.then((nr) => reply(msg, nr)))(msg, r)
 		} else {
-			let result = reply(message, resp);
+			let result = reply(message, resp)
 			if (result) {
-				return result;
+				return result
 			}
 		}
 	}
-	return false;
+	return false
 }
 
 function processMessage(message) {
 	try {
 		// stats before
-		const start = Date.now();
+		const start = Date.now()
 		
-		const waited = start - stat.waitLast;
+		const waited = start - stat.waitLast
 		if (stat.waitMax < waited) {
-			stat.waitMax = waited;
+			stat.waitMax = waited
 		}
-		stat.waitLast = start;
+		stat.waitLast = start
 		
 		// крипера ответ
-		const replied = checkReply(message);
+		const replied = checkReply(message)
 		
 		// stats after
-		const end = Date.now();
+		const end = Date.now()
 		
-		stat.readCount++;
-		stat.readCountDM += +!message.guild;
+		stat.readCount++
+		stat.readCountDM += +!message.guild
 		if (replied) {
 			if (replied === 'chillout') {
-				stat.chillCount++;
+				stat.chillCount++
 			}
-			stat.replyCount++;
-			stat.replyCountDM += +!message.guild;
+			stat.replyCount++
+			stat.replyCountDM += +!message.guild
 			
 			if (replied.then) {
 				replied.then(() => {
 					// successfully sent
-					stat.replySuccessCount++;
+					stat.replySuccessCount++
 					
-					stat.timeSendLast = Date.now() - end;
-					stat.timeSendSum += stat.timeSendLast;
+					stat.timeSendLast = Date.now() - end
+					stat.timeSendSum += stat.timeSendLast
 					if (stat.timeSendMax < stat.timeSendLast) {
-						stat.timeSendMax = stat.timeSendLast;
-						console.log(new Date);
-						console.log('Max sending time achieved: ' + stat.timeSendLast + ' ms on phrase', message.content);
+						stat.timeSendMax = stat.timeSendLast
+						console.log(new Date)
+						console.log('Max sending time achieved: ' + stat.timeSendLast + ' ms on phrase', message.content)
 					}
 				}).catch((err) => {
 					// failed to send
-					stat.replyFailCount++;
+					stat.replyFailCount++
 					if (String(err).match(/block/)) {
-						stat.replyBlockCount++;
+						stat.replyBlockCount++
 					}
 					
-					console.log(new Date);
-					console.log('Promise failed: ' + err + ' (' + err.code + ') on phrase', message.content, 'sent by user ' + message.author.id);
-				});
+					console.log(new Date)
+					console.log('Promise failed: ' + err + ' (' + err.code + ') on phrase', message.content, 'sent by user ' + message.author.id)
+				})
 			}
 		}
 		
-		stat.mentionCount += +message.mentions.users.has(myID);
+		stat.mentionCount += +message.mentions.users.has(myID)
 		
-		stat.waitLast = end;
+		stat.waitLast = end
 		
-		stat.timeLast = end - start;
-		stat.timeSum += stat.timeLast;
+		stat.timeLast = end - start
+		stat.timeSum += stat.timeLast
 		if (stat.timeMax < stat.timeLast) {
-			stat.timeMax = stat.timeLast;
-			console.log(new Date);
-			console.log('Max checking time achieved: ' + stat.timeLast + ' ms on phrase', message.content);
+			stat.timeMax = stat.timeLast
+			console.log(new Date)
+			console.log('Max checking time achieved: ' + stat.timeLast + ' ms on phrase', message.content)
 		}
 		
 	} catch(e) {
-		console.log(new Date);
-		console.log('Error got on phrase', message.content);
-		console.error(e);
-		stat.errorCount++;
+		console.log(new Date)
+		console.log('Error got on phrase', message.content)
+		console.error(e)
+		stat.errorCount++
 	}
 }
 
 
 
-that.alreadyLaunched = !!that.alreadyLaunched;
+that.alreadyLaunched = !!that.alreadyLaunched
 // сразу, как зайдёт
 client.on('ready', () => {
-	console.log('I am ready!');
+	console.log('I am ready!')
 	
-	myID = client.user.id;
-	setStatus();
+	myID = client.user.id
+	setStatus()
 	
 	if (!that.alreadyLaunched) {
-		that.alreadyLaunched = true;
+		that.alreadyLaunched = true
 		
 		// при сообщениях
 		client.on('message', message => {
 			if (message.system || message.author.bot || message.author.id == myID) {
-				return;
+				return
 			}
 			
 			// delay is necessary for correct message ordering
 			// because sometimes bot is too fast
-			setTimeout(processMessage, 100, message);
-		});
+			setTimeout(processMessage, 100, message)
+		})
 		
 		// при удализме
 		client.on('messageDelete', message => {
 			if (message.system || !message.guild || message.author.id == myID) {
-				return;
+				return
 			}
 			
-			let msgDate = message.createdAt;
-			let nowDate = new Date();
+			let msgDate = message.createdAt
+			let nowDate = new Date()
 			
 			// пишем в лог, может внезапно понадобиться при катастрофах
-			console.log('---------- Deleted:', dateStr(msgDate), '->', dateStr(nowDate));
-			console.log(message.guild.name, '|', message.channel.name, '|', message.author.username, '|', message.author.id);
-			console.log('Deleted content:', message.content);
+			console.log('---------- Deleted:', dateStr(msgDate), '->', dateStr(nowDate))
+			console.log(message.guild.name, '|', message.channel.name, '|', message.author.username, '|', message.author.id)
+			console.log('Deleted content:', message.content)
 			if (message.attachments.length) {
-				console.log('Deleted attachments:');
+				console.log('Deleted attachments:')
 				message.attachments.forEach((t) => {
-					console.log('- ', t.filename, t.url);
-				});
+					console.log('- ', t.filename, t.url)
+				})
 			}
-			console.log('----------');
+			console.log('----------')
 			
 			// анонс (выключено)
 			if (announceDeleted[junkize(message.channel.id)] && globalDB.dellog) {
 				let delText = [
 					'Здесь покоится сообщение, отправленное пользователем <@' + message.author.id + '>',
 					'R.I.P. `' + dateStr(msgDate) + '` — `' + dateStr(nowDate) + '`',
-				].join('\n');
-				message.channel.send(delText);
+				].join('\n')
+				message.channel.send(delText)
 			}
-		});
+		})
 		
 		// при редактировании
 		client.on('messageUpdate', (message, nmessage) => {
 			if (message.system || !message.guild || message.author.id == myID) {
-				return;
+				return
 			}
 			
-			let msgDate = message.createdAt;
-			let nowDate = new Date();
+			let msgDate = message.createdAt
+			let nowDate = new Date()
 			
 			// пишем в лог, может тоже внезапно понадобиться при катастрофах
-			console.log('---------- Edited:', dateStr(msgDate), '->', dateStr(nowDate));
-			console.log(message.guild.name, '|', message.channel.name, '|', message.author.username, '|', message.author.id);
-			console.log('Deleted content:', message.content);
-			console.log('Created content:', nmessage.content);
-			console.log('----------');
-		});
+			console.log('---------- Edited:', dateStr(msgDate), '->', dateStr(nowDate))
+			console.log(message.guild.name, '|', message.channel.name, '|', message.author.username, '|', message.author.id)
+			console.log('Deleted content:', message.content)
+			console.log('Created content:', nmessage.content)
+			console.log('----------')
+		})
 	}
-});
+})
 
-client.login(myToken);
+client.login(myToken)
 
 
 
@@ -2761,61 +2761,61 @@ let mdChars = {
 	'*': 'ibt',
 	'_': 'iu',
 	'~': '-s',
-};
+}
 
 // just a part of a parser
 function detectMd(s, i, tag, c) {
 	
-	//console.log(s,';',i,';',tag);
+	//console.log(s,';',i,';',tag)
 	// checking formatting type
-	let type = mdChars[tag[0]][tag.length - 1];
-	//console.log(tag,type,c);
+	let type = mdChars[tag[0]][tag.length - 1]
+	//console.log(tag,type,c)
 	
 	if (!type || !(type.charCodeAt(0) > 64) || (tag == '*' && !c.trim())) {
-		return null;
+		return null
 	}
 	
 	// searching the second tag
-	//console.log('!1');
-	let pos = i;
+	//console.log('!1')
+	let pos = i
 	while (true) {
-		//console.log(s[pos + tag.length] == tag[0], tag.length < 3, tag != '~~');
+		//console.log(s[pos + tag.length] == tag[0], tag.length < 3, tag != '~~')
 		while (s.substr(pos, tag.length) == tag && s[pos + tag.length] == tag[0] && tag.length < 3 && tag != '~~') {
-			//console.log('skip');
-			pos++;
+			//console.log('skip')
+			pos++
 		}
-		pos++;
+		pos++
 		if (pos == -1) {
-			return null;
+			return null
 		}
-		pos = s.indexOf(tag, pos);
-		//console.log('indice: ',pos);
+		pos = s.indexOf(tag, pos)
+		//console.log('indice: ',pos)
 		if (pos == -1) {
-			return null;
+			return null
 		}
 		if (s[pos + tag.length] != tag[0] || tag.length >= 3 || tag == '~~') {
-			break;
+			break
 		}
 	}
 	
-	//console.log('!2');
+	//console.log('!2')
 	
 	if (tag == '*' && !s.charAt(pos - 1).trim()) {
-		return null;
+		return null
 	}
 	
 	// formatting found
 	
-	let inner = s.slice(i, pos);
+	let inner = s.slice(i, pos)
 	if (tag[0] == '`' && !inner.trim() && (tag.length < 3 || !inner.match(/[^\n]/))) {
 		// surprisingly, these formatting types don't like emptiness, so one more try
-		let newpos = s.indexOf(tag, pos + 1);
+		let newpos = s.indexOf(tag, pos + 1)
 		if (newpos != -1) {
-			pos = newpos;
+			pos = newpos
 		}
 	}
 	
-	return [pos, type];
+	return [pos, type]
 }
 
 // parser
@@ -2823,84 +2823,84 @@ function parseMd(s, style) {
 	let o = {
 		type: style,
 		contents: [],
-	};
+	}
 	// don't parse in code blocks
 	if ('mc'.indexOf(style) != -1) {
-		o.contents.push(s);
-		return o;
+		o.contents.push(s)
+		return o
 	}
-	let i = 0;
-	let last = '';
-	let passed = '';
+	let i = 0
+	let last = ''
+	let passed = ''
 	while (i < s.length) {
-		let c = s[i];
+		let c = s[i]
 		if (last[0] == c && last.length < 3) {
 			if (last == '\\') {
-				passed += last;
-				last = '';
+				passed += last
+				last = ''
 			} else {
-				last += c;
+				last += c
 			}
 		} else {
 			// first tag found
 			if (mdChars[last[0]]) {
-				let pos = null;
+				let pos = null
 				for (let j = 0; j < last.length; j++) {
 					//if (j && i - j == 1 && last[0] == '*') {
-					//	continue;
+					//	continue
 					//}
-					pos = detectMd(s, i - j, last.slice(0, last.length - j), c);
+					pos = detectMd(s, i - j, last.slice(0, last.length - j), c)
 					if (pos) {
-						let inner = parseMd(s.slice(i - j, pos[0]), pos[1]);
-						o.contents.push(passed, inner);
-						s = s.slice(pos[0] + last.length - j);
-						passed = '';
-						last = '';
-						i = 0;
-						break;
+						let inner = parseMd(s.slice(i - j, pos[0]), pos[1])
+						o.contents.push(passed, inner)
+						s = s.slice(pos[0] + last.length - j)
+						passed = ''
+						last = ''
+						i = 0
+						break
 					}
 				}
 				if (pos) {
-					continue;
+					continue
 				}
 			}
 			
 			if (last == '\\') {
-				last += c;
-				c = '';
+				last += c
+				c = ''
 			}
-			passed += last;
-			last = c;
+			passed += last
+			last = c
 		}
-		i++;
+		i++
 	}
-	o.contents.push(passed + last);
-	return o;
+	o.contents.push(passed + last)
+	return o
 }
 
 // stringifier
 function plainText(o, ignored) {
 	// "ignored" is a string of chars of styles, their content will be ignored
-	let s = [];
-	let c = o.contents;
+	let s = []
+	let c = o.contents
 	for (let i = 0; i < c.length; i++) {
-		let t = c[i];
+		let t = c[i]
 		if (typeof t != 'string') {
 			if (ignored.indexOf(c[i].type) != -1) {
-				s += '\n';
-				continue;
+				s += '\n'
+				continue
 			}
-			t = plainText(t, ignored);
+			t = plainText(t, ignored)
 			
 			if (c[i].type == 'm') {
-				t = '`' + t + '`';
+				t = '`' + t + '`'
 			} else if (c[i].type == 'c') {
-				t = '\n' + t + '\n';
+				t = '\n' + t + '\n'
 			}
 		}
-		s += t;
+		s += t
 	}
-	return s;
+	return s
 }
 
-})(that);
+})(that)
