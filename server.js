@@ -76,6 +76,7 @@ const stat = {
 	
 	waitMax: 0,
 	waitLast: since,
+	readyCount: 0,
 }
 
 // выдаёт true с указанным шансом
@@ -2227,7 +2228,7 @@ const responses = [
 				'Наибольшее время простоя:\n**`' + dateDiff(stat.waitMax, true) + '`**.',
 				'',
 				'Шишек набито при запросе: **`' + stat.errorCount + '`**.',
-				//'Запусков в этой сессии: **`' + that.statLaunches + '`**.',
+				'Запусков в этой сессии: **`' + stat.readyCount + '`**.',
 			].join('\n')]
 		},
 	},
@@ -2671,9 +2672,7 @@ client.on('ready', () => {
 	myID = client.user.id
 	setStatus()
 	
-	//if (!that.alreadyLaunched) {
-	//	that.alreadyLaunched = true
-	if (true) {
+	if (!(stat.readyCount++)) {
 		
 		// при сообщениях
 		client.on('message', message => {
