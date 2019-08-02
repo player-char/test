@@ -6,6 +6,7 @@ const client = new Discord.Client()
 const https = require('https')
 const http = require('http')
 
+require('dotenv').config()
 const myToken = process.env.BOT_TOKEN
 
 // init
